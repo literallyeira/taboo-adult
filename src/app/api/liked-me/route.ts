@@ -69,7 +69,11 @@ export async function GET(request: Request) {
       .in('id', filteredFromIds);
 
     const list = (apps ?? []) as Application[];
-    return NextResponse.json({ count, likedBy: list });
+    const stripSensitive = (a: Application) => {
+      const { gtaw_user_id: _u, character_id: _c, ...rest } = a;
+      return rest;
+    };
+    return NextResponse.json({ count, likedBy: list.map(stripSensitive) });
   } catch (error) {
     console.error('Liked-me error:', error);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });

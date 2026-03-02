@@ -121,8 +121,12 @@ export async function GET(request: Request) {
       matchCountMap[m.application_2_id] = (matchCountMap[m.application_2_id] || 0) + 1;
     });
 
+    const stripSensitive = (app: Application) => {
+      const { gtaw_user_id: _, character_id: __, ...safe } = app;
+      return safe;
+    };
     const possible = [...boostedFirst.slice(0, 10), ...rest].slice(0, limit).map((a) => ({
-      ...a,
+      ...stripSensitive(a),
       liked_count: likedCountMap[a.id] || 0,
       match_count: matchCountMap[a.id] || 0,
     }));
@@ -139,7 +143,7 @@ export async function GET(request: Request) {
     return NextResponse.json({
       possibleMatches: possible,
       hasApplication: true,
-      application: myApplication,
+      application: stripSensitive(myApplication),
     });
   } catch (error) {
     console.error('Possible matches error:', error);
