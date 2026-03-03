@@ -47,9 +47,9 @@ export default function AdminPage() {
     const [loadingBugReports, setLoadingBugReports] = useState(false);
     const [jobApplications, setJobApplications] = useState<Array<{ id: string; character_name: string; phone_number: string; address: string; background: string; education: string; created_at: string; status: string }>>([]);
     const [loadingJobApplications, setLoadingJobApplications] = useState(false);
-    const [partnersList, setPartnersList] = useState<Array<{ id: string; name: string; logo_url: string; link_url: string; sort_order: number }>>([]);
+    const [partnersList, setPartnersList] = useState<Array<{ id: string; name: string; logo_url: string; link_url: string; sort_order: number; description?: string | null; promo_code?: string | null; discount_label?: string | null }>>([]);
     const [loadingPartners, setLoadingPartners] = useState(false);
-    const [partnerForm, setPartnerForm] = useState({ name: '', logo_url: '', link_url: '', sort_order: 0 });
+    const [partnerForm, setPartnerForm] = useState({ name: '', logo_url: '', link_url: '', sort_order: 0, description: '', promo_code: '', discount_label: '' });
     const [partnerSubmitting, setPartnerSubmitting] = useState(false);
     const [discountCodes, setDiscountCodes] = useState<Array<{ id: string; code: string; discount_type: string; discount_value: number; valid_from: string | null; valid_until: string | null; created_at: string }>>([]);
     const [loadingDiscountCodes, setLoadingDiscountCodes] = useState(false);
@@ -488,7 +488,7 @@ export default function AdminPage() {
                 body: JSON.stringify(partnerForm),
             });
             if (res.ok) {
-                setPartnerForm({ name: '', logo_url: '', link_url: '', sort_order: partnersList.length });
+                setPartnerForm({ name: '', logo_url: '', link_url: '', sort_order: partnersList.length, description: '', promo_code: '', discount_label: '' });
                 fetchPartners();
             }
         } catch { /* ignore */ }
@@ -1958,7 +1958,7 @@ export default function AdminPage() {
                     <div className="space-y-6">
                         <div className="card animate-fade-in">
                             <h2 className="text-lg font-semibold mb-4"><i className="fa-solid fa-handshake mr-2 text-[var(--matchup-primary)]"></i>Partnerler</h2>
-                            <p className="text-[var(--matchup-text-muted)] text-sm mb-4">Ana sayfada footer üstünde yarı saydam, linkli şirket logoları olarak gösterilir.</p>
+                            <p className="text-[var(--matchup-text-muted)] text-sm mb-4">Sitenin en üstünde avantaj barı ve footer üstünde &quot;İş Ortaklarımız & Avantajlar&quot; bölümünde gösterilir. Logo, açıklama ve indirim kodu ekleyebilirsiniz.</p>
 
                             <form onSubmit={addPartner} className="p-4 rounded-xl bg-[var(--matchup-bg-input)] border border-[var(--matchup-border)] mb-6">
                                 <h3 className="font-semibold mb-3">Yeni partner ekle</h3>
@@ -1968,7 +1968,7 @@ export default function AdminPage() {
                                         <input
                                             type="text"
                                             className="form-input"
-                                            placeholder="Şirket adı"
+                                            placeholder="Örn: Rockpool Bar"
                                             value={partnerForm.name}
                                             onChange={(e) => setPartnerForm({ ...partnerForm, name: e.target.value })}
                                         />
@@ -1983,7 +1983,7 @@ export default function AdminPage() {
                                             onChange={(e) => setPartnerForm({ ...partnerForm, logo_url: e.target.value })}
                                         />
                                     </div>
-                                    <div>
+                                    <div className="md:col-span-2">
                                         <label className="form-label text-sm">Link URL</label>
                                         <input
                                             type="url"
@@ -1991,6 +1991,36 @@ export default function AdminPage() {
                                             placeholder="https://..."
                                             value={partnerForm.link_url}
                                             onChange={(e) => setPartnerForm({ ...partnerForm, link_url: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <label className="form-label text-sm">Açıklama / Detay (opsiyonel)</label>
+                                        <input
+                                            type="text"
+                                            className="form-input"
+                                            placeholder="Kısa tanıtım metni"
+                                            value={partnerForm.description}
+                                            onChange={(e) => setPartnerForm({ ...partnerForm, description: e.target.value })}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="form-label text-sm">İndirim kodu (opsiyonel)</label>
+                                        <input
+                                            type="text"
+                                            className="form-input"
+                                            placeholder="Örn: MATCHUP20"
+                                            value={partnerForm.promo_code}
+                                            onChange={(e) => setPartnerForm({ ...partnerForm, promo_code: e.target.value.toUpperCase() })}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="form-label text-sm">İndirim etiketi (opsiyonel)</label>
+                                        <input
+                                            type="text"
+                                            className="form-input"
+                                            placeholder="Örn: %20 indirim"
+                                            value={partnerForm.discount_label}
+                                            onChange={(e) => setPartnerForm({ ...partnerForm, discount_label: e.target.value })}
                                         />
                                     </div>
                                     <div>
@@ -2018,16 +2048,24 @@ export default function AdminPage() {
                             ) : (
                                 <div className="space-y-3">
                                     {partnersList.map((p) => (
-                                        <div key={p.id} className="flex items-center gap-4 p-4 rounded-xl border border-white/10 bg-white/5">
+                                        <div key={p.id} className="flex items-start gap-4 p-4 rounded-xl border border-white/10 bg-white/5">
                                             <div className="w-16 h-10 flex-shrink-0 flex items-center justify-center bg-black/30 rounded overflow-hidden">
                                                 <img src={p.logo_url} alt={p.name} className="max-h-8 w-auto object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="font-semibold truncate">{p.name}</p>
-                                                <a href={p.link_url} target="_blank" rel="noopener noreferrer" className="text-xs text-[var(--matchup-primary)] truncate block">{p.link_url}</a>
+                                                {p.description && <p className="text-xs text-[var(--matchup-text-muted)] line-clamp-1">{p.description}</p>}
+                                                {(p.promo_code || p.discount_label) && (
+                                                    <p className="text-xs text-emerald-400/90 mt-0.5">
+                                                        {p.promo_code && <span className="font-mono">{p.promo_code}</span>}
+                                                        {p.promo_code && p.discount_label && ' · '}
+                                                        {p.discount_label}
+                                                    </p>
+                                                )}
+                                                <a href={p.link_url} target="_blank" rel="noopener noreferrer" className="text-xs text-[var(--matchup-primary)] truncate block mt-0.5">{p.link_url}</a>
                                             </div>
-                                            <span className="text-xs text-[var(--matchup-text-muted)]">Sıra: {p.sort_order}</span>
-                                            <button type="button" onClick={() => deletePartner(p.id)} className="btn-danger text-sm">
+                                            <span className="text-xs text-[var(--matchup-text-muted)] flex-shrink-0">Sıra: {p.sort_order}</span>
+                                            <button type="button" onClick={() => deletePartner(p.id)} className="btn-danger text-sm flex-shrink-0">
                                                 <i className="fa-solid fa-trash mr-1"></i>Sil
                                             </button>
                                         </div>

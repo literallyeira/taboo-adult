@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
   }
   try {
     const body = await request.json();
-    const { name, logo_url, link_url, sort_order } = body;
+    const { name, logo_url, link_url, sort_order, description, promo_code, discount_label } = body;
     if (!name?.trim() || !logo_url?.trim() || !link_url?.trim()) {
       return NextResponse.json({ error: 'name, logo_url ve link_url zorunludur' }, { status: 400 });
     }
@@ -40,6 +40,9 @@ export async function POST(request: NextRequest) {
         logo_url: logo_url.trim(),
         link_url: link_url.trim(),
         sort_order: typeof sort_order === 'number' ? sort_order : 0,
+        description: description?.trim() || null,
+        promo_code: promo_code?.trim() || null,
+        discount_label: discount_label?.trim() || null,
       })
       .select('id')
       .single();
