@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 
 interface Ad {
@@ -72,6 +73,7 @@ function AdSlot({ ad, side }: { ad: Ad | null; side: 'left' | 'right' }) {
 }
 
 export default function AdBanners() {
+  const pathname = usePathname();
   const [leftAd, setLeftAd] = useState<Ad | null>(null);
   const [rightAd, setRightAd] = useState<Ad | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -99,6 +101,7 @@ export default function AdBanners() {
   }, []);
 
   if (!loaded || !enabled) return null;
+  if (pathname !== '/') return null;
 
   return (
     <>

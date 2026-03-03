@@ -47,6 +47,8 @@ export async function GET(request: Request) {
       const prod = String(p.product || '').toLowerCase();
       if (prod in byProduct) {
         byProduct[prod] += amt;
+      } else if (prod.includes('ad') || prod === 'reklam') {
+        byProduct.ad_left += amt;
       }
     }
 
