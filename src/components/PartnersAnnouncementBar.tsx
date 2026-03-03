@@ -18,7 +18,7 @@ export default function PartnersAnnouncementBar() {
   return (
     <div className="w-full bg-[var(--matchup-primary)]/15 border-b border-[var(--matchup-primary)]/30 py-1.5 px-4 text-center">
       <Link
-        href="/#is-ortaklari-avantajlar"
+        href="/avantajlar"
         className="text-xs sm:text-sm text-[var(--matchup-text-muted)] hover:text-white transition-colors inline-flex items-center gap-2"
       >
         <i className="fa-solid fa-handshake text-[var(--matchup-primary)]" />

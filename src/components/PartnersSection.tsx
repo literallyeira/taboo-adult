@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 
 interface Partner {
   id: string;
@@ -8,9 +9,6 @@ interface Partner {
   logo_url: string;
   link_url: string;
   sort_order: number;
-  description?: string | null;
-  promo_code?: string | null;
-  discount_label?: string | null;
 }
 
 export default function PartnersSection() {
@@ -26,47 +24,34 @@ export default function PartnersSection() {
   if (partners.length === 0) return null;
 
   return (
-    <section id="is-ortaklari-avantajlar" className="w-full py-10 px-4 scroll-mt-4">
+    <section className="w-full py-10 px-4">
       <div className="max-w-4xl mx-auto">
-        <h2 className="text-center text-[var(--matchup-text-muted)] text-sm font-semibold uppercase tracking-wider mb-6">
-          İş Ortaklarımız & Avantajlar
-        </h2>
-        <p className="text-center text-[var(--matchup-text-muted)] text-xs mb-8 max-w-xl mx-auto">
-          Ortaklarımızın sizlere sunduğu avantajlardan faydalanın.
+        <p className="text-center text-[var(--matchup-text-muted)] text-xs uppercase tracking-wider mb-6">
+          Partnerlerimiz
         </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div className="flex flex-wrap items-center justify-center gap-8">
           {partners.map((p) => (
             <a
               key={p.id}
               href={p.link_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="group flex flex-col sm:flex-row items-center gap-4 p-4 rounded-2xl bg-[var(--matchup-bg-card)] border border-[var(--matchup-border)] hover:border-[var(--matchup-primary)]/40 transition-all duration-200 text-left"
+              className="group opacity-35 hover:opacity-100 transition-all duration-200 flex items-center justify-center"
+              title={p.name}
             >
-              <div className="flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden bg-black/20 flex items-center justify-center">
-                <img
-                  src={p.logo_url}
-                  alt={p.name}
-                  className="max-h-14 w-auto max-w-full object-contain grayscale group-hover:grayscale-0 transition-all"
-                />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-white group-hover:text-[var(--matchup-primary)] transition-colors">{p.name}</p>
-                {p.description && (
-                  <p className="text-sm text-[var(--matchup-text-muted)] mt-0.5 line-clamp-2">{p.description}</p>
-                )}
-                {(p.promo_code || p.discount_label) && (
-                  <p className="text-sm text-emerald-400/90 mt-1 font-medium">
-                    {p.promo_code && <span className="font-mono bg-white/10 px-1.5 py-0.5 rounded">{p.promo_code}</span>}
-                    {p.promo_code && p.discount_label && ' '}
-                    {p.discount_label && <span>{p.discount_label}</span>}
-                  </p>
-                )}
-              </div>
-              <i className="fa-solid fa-arrow-up-right-from-square text-[var(--matchup-text-muted)] group-hover:text-[var(--matchup-primary)] text-sm flex-shrink-0" />
+              <img
+                src={p.logo_url}
+                alt={p.name}
+                className="h-16 w-auto max-w-[240px] object-contain object-center grayscale group-hover:grayscale-0 transition-all duration-200"
+              />
             </a>
           ))}
         </div>
+        <p className="text-center mt-4">
+          <Link href="/avantajlar" className="text-xs text-[var(--matchup-primary)] hover:underline">
+            İş ortaklarımızın avantajlarına göz atın →
+          </Link>
+        </p>
       </div>
     </section>
   );
