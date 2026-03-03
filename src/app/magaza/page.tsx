@@ -23,6 +23,8 @@ export default function MagazaPage() {
   const [characters, setCharacters] = useState<Character[]>([]);
   const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
   const [discountCode, setDiscountCode] = useState('');
+  const [discountPreview, setDiscountPreview] = useState<Record<string, { finalPrice: number; discountAmount: number }>>({});
+  const [validatingCode, setValidatingCode] = useState(false);
   const [checkoutPending, setCheckoutPending] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [referralCount, setReferralCount] = useState<number | null>(null);
@@ -58,6 +60,47 @@ export default function MagazaPage() {
   const saveCharacter = useCallback((char: Character | null) => {
     if (char) localStorage.setItem('matchup_selected_character', JSON.stringify({ id: char.id, memberid: char.memberid, firstname: char.firstname, lastname: char.lastname }));
   }, []);
+
+  const applyDiscountCode = useCallback(async () => {
+    const code = discountCode.trim();
+    if (!code || !selectedCharacter) return;
+    setValidatingCode(true);
+    setDiscountPreview({});
+    try {
+      const results = await Promise.all(
+        PRODUCTS.map(async (p) => {
+          const res = await fetch('/api/discount/validate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code, product: p.id, characterId: selectedCharacter.id }),
+          });
+          const data = await res.json();
+          if (data.valid && data.finalPrice != null && data.discountAmount != null) {
+            return { id: p.id, finalPrice: data.finalPrice, discountAmount: data.discountAmount };
+          }
+          return null;
+        })
+      );
+      const next: Record<string, { finalPrice: number; discountAmount: number }> = {};
+      let totalDiscount = 0;
+      results.forEach((r) => {
+        if (r) {
+          next[r.id] = { finalPrice: r.finalPrice, discountAmount: r.discountAmount };
+          totalDiscount += r.discountAmount;
+        }
+      });
+      setDiscountPreview(next);
+      if (totalDiscount > 0) {
+        showToast(`${totalDiscount.toLocaleString('tr-TR')}$ indirim kazandınız!`, 'success');
+      } else {
+        showToast('Geçersiz veya kullanılmış kod.', 'error');
+      }
+    } catch {
+      showToast('Kod kontrol edilemedi.', 'error');
+    } finally {
+      setValidatingCode(false);
+    }
+  }, [discountCode, selectedCharacter, showToast]);
 
   const handleCheckout = async (product: 'plus' | 'pro' | 'boost') => {
     if (!selectedCharacter) return;
@@ -163,31 +206,58 @@ export default function MagazaPage() {
 
         <div className="mb-6 p-4 rounded-xl bg-[var(--matchup-bg-input)] border border-[var(--matchup-border)]">
           <label className="block text-sm font-medium text-[var(--matchup-text-muted)] mb-2">İndirim kodu (opsiyonel)</label>
-          <input
-            type="text"
-            value={discountCode}
-            onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
-            placeholder="Kodunuz varsa girin"
-            className="form-input w-full max-w-xs"
-          />
+          <div className="flex flex-wrap gap-2 items-end">
+            <input
+              type="text"
+              value={discountCode}
+              onChange={(e) => { setDiscountCode(e.target.value.toUpperCase()); setDiscountPreview({}); }}
+              placeholder="Kodunuz varsa girin"
+              className="form-input flex-1 min-w-[140px] max-w-xs"
+            />
+            <button
+              type="button"
+              onClick={applyDiscountCode}
+              disabled={!discountCode.trim() || !selectedCharacter || validatingCode}
+              className="btn-primary text-sm py-2 px-4"
+            >
+              {validatingCode ? 'Kontrol ediliyor...' : 'Kodu Uygula'}
+            </button>
+          </div>
           <p className="text-xs text-[var(--matchup-text-muted)] mt-1">Bir kodu her kullanıcı yalnızca bir kez kullanabilir.</p>
         </div>
 
         <div className="space-y-4">
-          {PRODUCTS.map((prod) => (
-            <div key={prod.id} className="p-4 rounded-xl bg-[var(--matchup-bg-card)] border border-[var(--matchup-border)]">
-              <h2 className="font-bold text-[var(--matchup-primary)] mb-1">{prod.name}</h2>
-              <p className="text-sm text-[var(--matchup-text-muted)] mb-2">{prod.desc}</p>
-              <p className="text-lg font-bold mb-3">{prod.price.toLocaleString('tr-TR')}$</p>
-              <button
-                onClick={() => handleCheckout(prod.id)}
-                disabled={!!checkoutPending || !selectedCharacter}
-                className="btn-primary text-sm py-2"
-              >
-                {checkoutPending === prod.id ? 'Yönlendiriliyor...' : 'Satın Al'}
-              </button>
-            </div>
-          ))}
+          {PRODUCTS.map((prod) => {
+            const preview = discountPreview[prod.id];
+            const finalPrice = preview ? preview.finalPrice : prod.price;
+            const discountAmount = preview?.discountAmount ?? 0;
+            return (
+              <div key={prod.id} className="p-4 rounded-xl bg-[var(--matchup-bg-card)] border border-[var(--matchup-border)]">
+                <h2 className="font-bold text-[var(--matchup-primary)] mb-1">{prod.name}</h2>
+                <p className="text-sm text-[var(--matchup-text-muted)] mb-2">{prod.desc}</p>
+                <div className="mb-3">
+                  {discountAmount > 0 ? (
+                    <>
+                      <span className="text-base text-[var(--matchup-text-muted)] line-through mr-2">{prod.price.toLocaleString('tr-TR')}$</span>
+                      <span className="text-lg font-bold text-emerald-400">{finalPrice.toLocaleString('tr-TR')}$</span>
+                      <p className="text-sm text-emerald-400/90 mt-0.5">
+                        <i className="fa-solid fa-tag mr-1" />{discountAmount.toLocaleString('tr-TR')}$ indirim kazandınız!
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-lg font-bold">{prod.price.toLocaleString('tr-TR')}$</p>
+                  )}
+                </div>
+                <button
+                  onClick={() => handleCheckout(prod.id)}
+                  disabled={!!checkoutPending || !selectedCharacter}
+                  className="btn-primary text-sm py-2"
+                >
+                  {checkoutPending === prod.id ? 'Yönlendiriliyor...' : 'Satın Al'}
+                </button>
+              </div>
+            );
+          })}
 
           <div className="p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/5">
             <h2 className="font-bold text-emerald-400 mb-1"><i className="fa-solid fa-gift mr-2" />Ücretsiz Pro</h2>
