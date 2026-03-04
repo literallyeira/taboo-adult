@@ -38,7 +38,7 @@ export default function HomePage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/tabo.png" alt="TABOO" className="h-32 md:h-40 w-auto mx-auto" />
           </div>
-          <p className="text-xs uppercase tracking-[0.3em] text-[var(--taboo-accent)] mb-4">Premium Yetişkin Ürünleri</p>
+          <p className="text-xs uppercase tracking-[0.3em] text-[var(--taboo-accent)] mb-4">PREMIUM Yetişkin Ürünleri</p>
           <h1 className="font-[var(--font-serif)] text-4xl md:text-6xl font-bold mb-6 leading-tight">
             Arzularınızı<br />
             <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-purple-400 bg-clip-text text-transparent">Keşfedin</span>

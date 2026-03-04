@@ -21,7 +21,7 @@ const playfair = Playfair_Display({
 
 export const metadata: Metadata = {
   title: "Taboo Adult Store",
-  description: "Premium yetişkin ürünleri.",
+    description: "PREMIUM yetişkin ürünleri.",
   icons: {
     icon: "/tabo.png",
     shortcut: "/tabo.png",
