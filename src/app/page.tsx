@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import type { Product, Category, BlogPost } from '@/lib/supabase'
 import ProductCard from '@/components/ProductCard'
+import Comments from '@/components/Comments'
 
 export default function HomePage() {
   const [products, setProducts] = useState<Product[]>([])
@@ -221,6 +222,9 @@ export default function HomePage() {
           </div>
         </section>
       )}
+
+      {/* Yorumlar */}
+      <Comments />
     </div>
   )
 }

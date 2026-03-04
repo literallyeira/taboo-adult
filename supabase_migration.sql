@@ -170,3 +170,34 @@ CREATE TRIGGER tb_update_blog_posts_updated_at
   BEFORE UPDATE ON tb_blog_posts
   FOR EACH ROW
   EXECUTE FUNCTION tb_update_updated_at_column();
+
+-- ============================================
+-- Yorumlar
+-- ============================================
+
+CREATE TABLE tb_comments (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name TEXT,
+  comment TEXT NOT NULL,
+  rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  ip_address TEXT,
+  user_agent TEXT,
+  approved BOOLEAN DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE tb_comments ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public read tb_comments" ON tb_comments FOR SELECT TO anon USING (approved = true);
+CREATE POLICY "Public insert tb_comments" ON tb_comments FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "Public delete tb_comments" ON tb_comments FOR DELETE TO anon USING (false);
+CREATE POLICY "Admin delete tb_comments" ON tb_comments FOR DELETE TO anon USING (true);
+
+-- updated_at trigger for comments
+CREATE TRIGGER tb_update_comments_updated_at
+  BEFORE UPDATE ON tb_comments
+  FOR EACH ROW
+  EXECUTE FUNCTION tb_update_updated_at_column();
+
+-- Spam koruması için index
+CREATE INDEX idx_comments_ip_created ON tb_comments(ip_address, created_at);

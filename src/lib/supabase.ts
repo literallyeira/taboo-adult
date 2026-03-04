@@ -72,3 +72,15 @@ export interface BlogPost {
   created_at: string
   updated_at: string
 }
+
+export interface Comment {
+  id: string
+  name: string | null
+  comment: string
+  rating: number
+  ip_address: string | null
+  user_agent: string | null
+  approved: boolean
+  created_at: string
+  updated_at: string
+}

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import type { Product, Category, OrderStatus, DeliveryType, BlogPost } from '@/lib/supabase'
+import type { Product, Category, OrderStatus, DeliveryType, BlogPost, Comment } from '@/lib/supabase'
 import Modal from '@/components/Modal'
 
 interface OrderData {
@@ -57,6 +57,7 @@ const TAB_LABELS: Record<string, { label: string; icon: string }> = {
   categories: { label: 'Kategoriler', icon: 'fa-solid fa-tags' },
   orders: { label: 'Siparişler', icon: 'fa-solid fa-receipt' },
   blog: { label: 'Blog', icon: 'fa-solid fa-blog' },
+  comments: { label: 'Yorumlar', icon: 'fa-solid fa-comments' },
 }
 
 export default function AdminPage() {
@@ -65,7 +66,7 @@ export default function AdminPage() {
   const [authError, setAuthError] = useState(false)
 
   // Tab
-  const [tab, setTab] = useState<'dashboard' | 'products' | 'categories' | 'orders' | 'blog'>('dashboard')
+  const [tab, setTab] = useState<'dashboard' | 'products' | 'categories' | 'orders' | 'blog' | 'comments'>('dashboard')
 
   // Data
   const [stats, setStats] = useState<Stats | null>(null)
@@ -73,6 +74,7 @@ export default function AdminPage() {
   const [categories, setCategories] = useState<Category[]>([])
   const [orders, setOrders] = useState<OrderData[]>([])
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([])
+  const [comments, setComments] = useState<Comment[]>([])
   const [loading, setLoading] = useState(false)
 
   // Product form
@@ -152,18 +154,20 @@ export default function AdminPage() {
   const fetchAll = useCallback(async () => {
     setLoading(true)
     try {
-      const [s, p, c, o, b] = await Promise.all([
+      const [s, p, c, o, b, cm] = await Promise.all([
         fetch('/api/admin/stats', { headers: { 'x-admin-password': password } }).then(r => r.json()),
         fetch('/api/admin/products', { headers: { 'x-admin-password': password } }).then(r => r.json()),
         fetch('/api/admin/categories', { headers: { 'x-admin-password': password } }).then(r => r.json()),
         fetch('/api/admin/orders', { headers: { 'x-admin-password': password } }).then(r => r.json()),
         fetch('/api/admin/blog', { headers: { 'x-admin-password': password } }).then(r => r.json()),
+        fetch('/api/admin/comments', { headers: { 'x-admin-password': password } }).then(r => r.json()),
       ])
       setStats(s)
       setProducts(Array.isArray(p) ? p : [])
       setCategories(Array.isArray(c) ? c : [])
       setOrders(Array.isArray(o) ? o : [])
       setBlogPosts(Array.isArray(b) ? b : [])
+      setComments(Array.isArray(cm) ? cm : [])
     } catch { /* ignore */ }
     setLoading(false)
   }, [password])
@@ -309,6 +313,13 @@ export default function AdminPage() {
     fetchAll()
   }
 
+  // === Comment actions ===
+  const deleteComment = async (id: string) => {
+    if (!confirm('Bu yorumu silmek istediğinize emin misiniz?')) return
+    await fetch(`/api/admin/comments?id=${id}`, { method: 'DELETE', headers: headers() })
+    fetchAll()
+  }
+
   // === Login screen ===
   if (!authed) {
     return (
@@ -352,7 +363,7 @@ export default function AdminPage() {
 
       {/* Tabs */}
       <div className="flex gap-1 mb-6 bg-[var(--taboo-bg-light)] p-1 rounded-xl w-fit">
-        {(['dashboard', 'products', 'categories', 'orders', 'blog'] as const).map(t => (
+        {(['dashboard', 'products', 'categories', 'orders', 'blog', 'comments'] as const).map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -597,6 +608,67 @@ export default function AdminPage() {
             ))}
             {blogPosts.length === 0 && (
               <div className="card text-center py-10 text-[var(--taboo-text-muted)]">Henüz blog yazısı yok.</div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ===== COMMENTS ===== */}
+      {tab === 'comments' && (
+        <div>
+          <h2 className="text-lg font-semibold mb-4">Yorumlar ({comments.length})</h2>
+          <div className="space-y-3">
+            {comments.map(comment => (
+              <div key={comment.id} className="card p-4">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-[var(--taboo-bg-light)] flex items-center justify-center">
+                      <i className="fa-solid fa-user text-[var(--taboo-text-muted)]" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-sm">
+                        {comment.name || 'Anonim'}
+                      </div>
+                      <div className="text-xs text-[var(--taboo-text-muted)]">
+                        {new Date(comment.created_at).toLocaleString('tr-TR')}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map(r => (
+                        <i
+                          key={r}
+                          className={`fa-solid fa-star text-xs ${
+                            r <= comment.rating
+                              ? 'text-yellow-400'
+                              : 'text-[var(--taboo-text-muted)] opacity-30'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    {comment.approved ? (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-500/10 text-green-400">Onaylı</span>
+                    ) : (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-yellow-500/10 text-yellow-400">Beklemede</span>
+                    )}
+                  </div>
+                </div>
+                <p className="text-sm text-[var(--taboo-text)] mb-2 leading-relaxed whitespace-pre-wrap">
+                  {comment.comment}
+                </p>
+                {comment.ip_address && (
+                  <p className="text-xs text-[var(--taboo-text-muted)] font-mono mb-2">
+                    IP: {comment.ip_address}
+                  </p>
+                )}
+                <button onClick={() => deleteComment(comment.id)} className="btn-danger text-xs px-3 py-1.5">
+                  <i className="fa-solid fa-trash mr-1" />Sil
+                </button>
+              </div>
+            ))}
+            {comments.length === 0 && (
+              <div className="card text-center py-10 text-[var(--taboo-text-muted)]">Henüz yorum yok.</div>
             )}
           </div>
         </div>
