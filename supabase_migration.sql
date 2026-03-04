@@ -140,3 +140,33 @@ CREATE POLICY "Public delete product-images"
 ON storage.objects FOR DELETE
 TO anon, authenticated
 USING (bucket_id = 'product-images');
+
+-- ============================================
+-- Blog Yazıları
+-- ============================================
+
+CREATE TABLE tb_blog_posts (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  content TEXT,
+  cover_image_url TEXT,
+  author TEXT NOT NULL,
+  slug TEXT NOT NULL UNIQUE,
+  published BOOLEAN DEFAULT false,
+  sort_order INTEGER DEFAULT 0,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE tb_blog_posts ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public read tb_blog_posts" ON tb_blog_posts FOR SELECT TO anon USING (published = true);
+CREATE POLICY "Public insert tb_blog_posts" ON tb_blog_posts FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "Public update tb_blog_posts" ON tb_blog_posts FOR UPDATE TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "Public delete tb_blog_posts" ON tb_blog_posts FOR DELETE TO anon USING (true);
+
+-- updated_at trigger for blog posts
+CREATE TRIGGER tb_update_blog_posts_updated_at
+  BEFORE UPDATE ON tb_blog_posts
+  FOR EACH ROW
+  EXECUTE FUNCTION tb_update_updated_at_column();

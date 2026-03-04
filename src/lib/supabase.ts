@@ -58,3 +58,17 @@ export interface OrderItem {
 export interface OrderWithItems extends Order {
   tb_order_items: OrderItem[]
 }
+
+export interface BlogPost {
+  id: string
+  title: string
+  description: string
+  content: string | null
+  cover_image_url: string | null
+  author: string
+  slug: string
+  published: boolean
+  sort_order: number
+  created_at: string
+  updated_at: string
+}

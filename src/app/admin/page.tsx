@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import type { Product, Category, OrderStatus, DeliveryType } from '@/lib/supabase'
+import type { Product, Category, OrderStatus, DeliveryType, BlogPost } from '@/lib/supabase'
+import Modal from '@/components/Modal'
 
 interface OrderData {
   id: string
@@ -55,6 +56,7 @@ const TAB_LABELS: Record<string, { label: string; icon: string }> = {
   products: { label: 'Ürünler', icon: 'fa-solid fa-box-open' },
   categories: { label: 'Kategoriler', icon: 'fa-solid fa-tags' },
   orders: { label: 'Siparişler', icon: 'fa-solid fa-receipt' },
+  blog: { label: 'Blog', icon: 'fa-solid fa-blog' },
 }
 
 export default function AdminPage() {
@@ -63,13 +65,14 @@ export default function AdminPage() {
   const [authError, setAuthError] = useState(false)
 
   // Tab
-  const [tab, setTab] = useState<'dashboard' | 'products' | 'categories' | 'orders'>('dashboard')
+  const [tab, setTab] = useState<'dashboard' | 'products' | 'categories' | 'orders' | 'blog'>('dashboard')
 
   // Data
   const [stats, setStats] = useState<Stats | null>(null)
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [orders, setOrders] = useState<OrderData[]>([])
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([])
   const [loading, setLoading] = useState(false)
 
   // Product form
@@ -91,6 +94,18 @@ export default function AdminPage() {
   const [cSlug, setCSlug] = useState('')
   const [cSort, setCSort] = useState('0')
 
+  // Blog form
+  const [showBlogForm, setShowBlogForm] = useState(false)
+  const [editBlog, setEditBlog] = useState<BlogPost | null>(null)
+  const [bTitle, setBTitle] = useState('')
+  const [bDesc, setBDesc] = useState('')
+  const [bContent, setBContent] = useState('')
+  const [bCoverImage, setBCoverImage] = useState('')
+  const [bAuthor, setBAuthor] = useState('')
+  const [bSlug, setBSlug] = useState('')
+  const [bPublished, setBPublished] = useState(false)
+  const [bSort, setBSort] = useState('0')
+
   const headers = useCallback(() => ({
     'Content-Type': 'application/json',
     'x-admin-password': password,
@@ -100,7 +115,7 @@ export default function AdminPage() {
     'x-admin-password': password,
   }), [password])
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'product' | 'blog' = 'product') => {
     const file = e.target.files?.[0]
     if (!file) return
 
@@ -120,7 +135,11 @@ export default function AdminPage() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Yükleme başarısız')
 
-      setPImage(data.url)
+      if (type === 'product') {
+        setPImage(data.url)
+      } else {
+        setBCoverImage(data.url)
+      }
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : 'Yükleme hatası')
     } finally {
@@ -133,16 +152,18 @@ export default function AdminPage() {
   const fetchAll = useCallback(async () => {
     setLoading(true)
     try {
-      const [s, p, c, o] = await Promise.all([
+      const [s, p, c, o, b] = await Promise.all([
         fetch('/api/admin/stats', { headers: { 'x-admin-password': password } }).then(r => r.json()),
         fetch('/api/admin/products', { headers: { 'x-admin-password': password } }).then(r => r.json()),
         fetch('/api/admin/categories', { headers: { 'x-admin-password': password } }).then(r => r.json()),
         fetch('/api/admin/orders', { headers: { 'x-admin-password': password } }).then(r => r.json()),
+        fetch('/api/admin/blog', { headers: { 'x-admin-password': password } }).then(r => r.json()),
       ])
       setStats(s)
       setProducts(Array.isArray(p) ? p : [])
       setCategories(Array.isArray(c) ? c : [])
       setOrders(Array.isArray(o) ? o : [])
+      setBlogPosts(Array.isArray(b) ? b : [])
     } catch { /* ignore */ }
     setLoading(false)
   }, [password])
@@ -161,6 +182,7 @@ export default function AdminPage() {
   useEffect(() => {
     if (authed) fetchAll()
   }, [authed, fetchAll])
+
 
   // === Product actions ===
   const openProductForm = (product?: Product) => {
@@ -238,6 +260,55 @@ export default function AdminPage() {
     fetchAll()
   }
 
+  // === Blog actions ===
+  const openBlogForm = (blog?: BlogPost) => {
+    if (blog) {
+      setEditBlog(blog)
+      setBTitle(blog.title)
+      setBDesc(blog.description)
+      setBContent(blog.content || '')
+      setBCoverImage(blog.cover_image_url || '')
+      setBAuthor(blog.author)
+      setBSlug(blog.slug)
+      setBPublished(blog.published)
+      setBSort(String(blog.sort_order))
+    } else {
+      setEditBlog(null)
+      setBTitle(''); setBDesc(''); setBContent(''); setBCoverImage(''); setBAuthor(''); setBSlug(''); setBPublished(false); setBSort('0')
+    }
+    setShowBlogForm(true)
+  }
+
+  const saveBlog = async () => {
+    if (!bTitle || !bDesc || !bAuthor || !bSlug) return
+    const body = {
+      ...(editBlog ? { id: editBlog.id } : {}),
+      title: bTitle,
+      description: bDesc,
+      content: bContent || null,
+      cover_image_url: bCoverImage || null,
+      author: bAuthor,
+      slug: bSlug,
+      published: bPublished,
+      sort_order: Number(bSort) || 0,
+    }
+
+    await fetch('/api/admin/blog', {
+      method: editBlog ? 'PUT' : 'POST',
+      headers: headers(),
+      body: JSON.stringify(body),
+    })
+
+    setShowBlogForm(false)
+    fetchAll()
+  }
+
+  const deleteBlog = async (id: string) => {
+    if (!confirm('Bu blog yazısını silmek istediğinize emin misiniz?')) return
+    await fetch(`/api/admin/blog?id=${id}`, { method: 'DELETE', headers: headers() })
+    fetchAll()
+  }
+
   // === Login screen ===
   if (!authed) {
     return (
@@ -281,7 +352,7 @@ export default function AdminPage() {
 
       {/* Tabs */}
       <div className="flex gap-1 mb-6 bg-[var(--taboo-bg-light)] p-1 rounded-xl w-fit">
-        {(['dashboard', 'products', 'categories', 'orders'] as const).map(t => (
+        {(['dashboard', 'products', 'categories', 'orders', 'blog'] as const).map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -317,105 +388,6 @@ export default function AdminPage() {
               <i className="fa-solid fa-plus mr-1" /> Ürün Ekle
             </button>
           </div>
-
-          {/* Product form modal */}
-          {showProductForm && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setShowProductForm(false)}>
-              <div className="card w-full max-w-md max-h-[90vh] overflow-y-auto space-y-3" onClick={e => e.stopPropagation()}>
-                <h3 className="font-bold text-lg">{editProduct ? 'Ürün Düzenle' : 'Ürün Ekle'}</h3>
-                <div>
-                  <label className="form-label">Ürün Adı *</label>
-                  <input value={pName} onChange={e => setPName(e.target.value)} className="form-input" />
-                </div>
-                <div>
-                  <label className="form-label">Açıklama</label>
-                  <textarea value={pDesc} onChange={e => setPDesc(e.target.value)} className="form-input resize-none" rows={3} />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="form-label">Fiyat *</label>
-                    <input type="number" value={pPrice} onChange={e => setPPrice(e.target.value)} className="form-input" />
-                  </div>
-                  <div>
-                    <label className="form-label">Sıra</label>
-                    <input type="number" value={pSort} onChange={e => setPSort(e.target.value)} className="form-input" />
-                  </div>
-                </div>
-                <div>
-                  <label className="form-label">Fotoğraf</label>
-                  <div className="space-y-2">
-                    {/* File upload */}
-                    <div className="flex items-center gap-2">
-                      <label className="flex-1 cursor-pointer">
-                        <input
-                          type="file"
-                          accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
-                          onChange={handleImageUpload}
-                          disabled={uploading}
-                          className="hidden"
-                        />
-                        <div className={`btn-secondary w-full text-center py-2 ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                          {uploading ? (
-                            <>
-                              <i className="fa-solid fa-spinner fa-spin mr-2" />Yükleniyor...
-                            </>
-                          ) : (
-                            <>
-                              <i className="fa-solid fa-upload mr-2" />Fotoğraf Yükle
-                            </>
-                          )}
-                        </div>
-                      </label>
-                    </div>
-                    {uploadError && (
-                      <p className="text-xs text-red-400">{uploadError}</p>
-                    )}
-                    {/* URL input */}
-                    <div className="text-xs text-[var(--taboo-text-muted)] text-center">veya</div>
-                    <input
-                      value={pImage}
-                      onChange={e => setPImage(e.target.value)}
-                      className="form-input text-sm"
-                      placeholder="https://ornek.com/foto.jpg"
-                    />
-                    {/* Preview */}
-                    {pImage && (
-                      <div className="mt-2 w-full aspect-square max-w-[200px] rounded-lg overflow-hidden bg-[var(--taboo-bg-light)] border border-[var(--taboo-border)]">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={pImage}
-                          alt="Önizleme"
-                          className="w-full h-full object-cover"
-                          onError={e => {
-                            e.currentTarget.style.display = 'none'
-                            const parent = e.currentTarget.parentElement
-                            if (parent) {
-                              parent.innerHTML = '<div class="w-full h-full flex items-center justify-center text-xs text-red-400">Yüklenemedi</div>'
-                            }
-                          }}
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div>
-                  <label className="form-label">Kategori</label>
-                  <select value={pCategory} onChange={e => setPCategory(e.target.value)} className="form-input">
-                    <option value="">Yok</option>
-                    {categories.map(c => <option key={c.id} value={c.slug}>{c.name}</option>)}
-                  </select>
-                </div>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={pInStock} onChange={e => setPInStock(e.target.checked)} className="accent-[var(--taboo-primary)]" />
-                  <span className="text-sm">Stokta</span>
-                </label>
-                <div className="flex gap-2 pt-2">
-                  <button onClick={saveProduct} className="btn-primary flex-1">Kaydet</button>
-                  <button onClick={() => setShowProductForm(false)} className="btn-secondary flex-1">İptal</button>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Product list */}
           <div className="space-y-2">
@@ -577,6 +549,180 @@ export default function AdminPage() {
           </div>
         </div>
       )}
+
+      {/* ===== BLOG ===== */}
+      {tab === 'blog' && (
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold">Blog Yazıları ({blogPosts.length})</h2>
+            <button onClick={() => openBlogForm()} className="btn-primary text-sm">
+              <i className="fa-solid fa-plus mr-1" /> Blog Yazısı Ekle
+            </button>
+          </div>
+
+          {/* Blog list */}
+          <div className="space-y-2">
+            {blogPosts.map(post => (
+              <div key={post.id} className="card flex items-center gap-4 p-3">
+                <div className="w-16 h-16 rounded-lg bg-[var(--taboo-bg-light)] overflow-hidden flex-shrink-0">
+                  {post.cover_image_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={post.cover_image_url} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-xs text-[var(--taboo-border)]">
+                      <i className="fa-regular fa-image" />
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-sm truncate">{post.title}</span>
+                    {post.published ? (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-500/10 text-green-400">Yayında</span>
+                    ) : (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-yellow-500/10 text-yellow-400">Taslak</span>
+                    )}
+                  </div>
+                  <div className="text-xs text-[var(--taboo-text-muted)]">
+                    {post.author} · {new Date(post.created_at).toLocaleDateString('tr-TR')}
+                  </div>
+                </div>
+                <button onClick={() => openBlogForm(post)} className="btn-secondary text-xs px-3 py-1.5">
+                  <i className="fa-solid fa-pen mr-1" />Düzenle
+                </button>
+                <button onClick={() => deleteBlog(post.id)} className="btn-danger text-xs px-3 py-1.5">
+                  <i className="fa-solid fa-trash mr-1" />Sil
+                </button>
+              </div>
+            ))}
+            {blogPosts.length === 0 && (
+              <div className="card text-center py-10 text-[var(--taboo-text-muted)]">Henüz blog yazısı yok.</div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ===== PRODUCT MODAL (Portal) ===== */}
+      <Modal open={showProductForm} onClose={() => setShowProductForm(false)} maxWidth="max-w-md">
+        <h3 className="font-bold text-lg">{editProduct ? 'Ürün Düzenle' : 'Ürün Ekle'}</h3>
+        <div>
+          <label className="form-label">Ürün Adı *</label>
+          <input value={pName} onChange={e => setPName(e.target.value)} className="form-input" />
+        </div>
+        <div>
+          <label className="form-label">Açıklama</label>
+          <textarea value={pDesc} onChange={e => setPDesc(e.target.value)} className="form-input resize-none" rows={3} />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="form-label">Fiyat *</label>
+            <input type="number" value={pPrice} onChange={e => setPPrice(e.target.value)} className="form-input" />
+          </div>
+          <div>
+            <label className="form-label">Sıra</label>
+            <input type="number" value={pSort} onChange={e => setPSort(e.target.value)} className="form-input" />
+          </div>
+        </div>
+        <div>
+          <label className="form-label">Fotoğraf</label>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <label className="flex-1 cursor-pointer">
+                <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp,image/gif" onChange={e => handleImageUpload(e, 'product')} disabled={uploading} className="hidden" />
+                <div className={`btn-secondary w-full text-center py-2 ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                  {uploading ? <><i className="fa-solid fa-spinner fa-spin mr-2" />Yükleniyor...</> : <><i className="fa-solid fa-upload mr-2" />Fotoğraf Yükle</>}
+                </div>
+              </label>
+            </div>
+            {uploadError && <p className="text-xs text-red-400">{uploadError}</p>}
+            <div className="text-xs text-[var(--taboo-text-muted)] text-center">veya</div>
+            <input value={pImage} onChange={e => setPImage(e.target.value)} className="form-input text-sm" placeholder="https://ornek.com/foto.jpg" />
+            {pImage && (
+              <div className="mt-2 w-full aspect-square max-w-[200px] rounded-lg overflow-hidden bg-[var(--taboo-bg-light)] border border-[var(--taboo-border)]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={pImage} alt="Önizleme" className="w-full h-full object-cover" onError={e => { e.currentTarget.style.display = 'none'; const p = e.currentTarget.parentElement; if (p) p.innerHTML = '<div class="w-full h-full flex items-center justify-center text-xs text-red-400">Yüklenemedi</div>' }} />
+              </div>
+            )}
+          </div>
+        </div>
+        <div>
+          <label className="form-label">Kategori</label>
+          <select value={pCategory} onChange={e => setPCategory(e.target.value)} className="form-input">
+            <option value="">Yok</option>
+            {categories.map(c => <option key={c.id} value={c.slug}>{c.name}</option>)}
+          </select>
+        </div>
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" checked={pInStock} onChange={e => setPInStock(e.target.checked)} className="accent-[var(--taboo-primary)]" />
+          <span className="text-sm">Stokta</span>
+        </label>
+        <div className="flex gap-2 pt-2">
+          <button onClick={saveProduct} className="btn-primary flex-1">Kaydet</button>
+          <button onClick={() => setShowProductForm(false)} className="btn-secondary flex-1">İptal</button>
+        </div>
+      </Modal>
+
+      {/* ===== BLOG MODAL (Portal) ===== */}
+      <Modal open={showBlogForm} onClose={() => setShowBlogForm(false)} maxWidth="max-w-2xl">
+        <h3 className="font-bold text-lg">{editBlog ? 'Blog Yazısı Düzenle' : 'Blog Yazısı Ekle'}</h3>
+        <div>
+          <label className="form-label">Başlık *</label>
+          <input value={bTitle} onChange={e => { setBTitle(e.target.value); if (!editBlog) setBSlug(e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')) }} className="form-input" />
+        </div>
+        <div>
+          <label className="form-label">Açıklama *</label>
+          <textarea value={bDesc} onChange={e => setBDesc(e.target.value)} className="form-input resize-none" rows={3} />
+        </div>
+        <div>
+          <label className="form-label">İçerik</label>
+          <textarea value={bContent} onChange={e => setBContent(e.target.value)} className="form-input resize-none" rows={6} placeholder="Blog yazısının tam içeriği..." />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="form-label">Yazar *</label>
+            <input value={bAuthor} onChange={e => setBAuthor(e.target.value)} className="form-input" />
+          </div>
+          <div>
+            <label className="form-label">Slug *</label>
+            <input value={bSlug} onChange={e => setBSlug(e.target.value)} className="form-input" />
+          </div>
+        </div>
+        <div>
+          <label className="form-label">Kapak Fotoğrafı</label>
+          <div className="flex items-center gap-2">
+            <label className="flex-1 cursor-pointer">
+              <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp,image/gif" onChange={e => handleImageUpload(e, 'blog')} disabled={uploading} className="hidden" />
+              <div className={`btn-secondary w-full text-center py-2 ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                {uploading ? <><i className="fa-solid fa-spinner fa-spin mr-2" />Yükleniyor...</> : <><i className="fa-solid fa-upload mr-2" />Fotoğraf Yükle</>}
+              </div>
+            </label>
+          </div>
+          {uploadError && <p className="text-xs text-red-400 mt-1">{uploadError}</p>}
+          <input value={bCoverImage} onChange={e => setBCoverImage(e.target.value)} className="form-input text-sm mt-2" placeholder="https://ornek.com/foto.jpg" />
+          {bCoverImage && (
+            <div className="mt-2 w-full aspect-video max-w-md rounded-lg overflow-hidden bg-[var(--taboo-bg-light)] border border-[var(--taboo-border)]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={bCoverImage} alt="Önizleme" className="w-full h-full object-cover" onError={e => { e.currentTarget.style.display = 'none'; const p = e.currentTarget.parentElement; if (p) p.innerHTML = '<div class="w-full h-full flex items-center justify-center text-xs text-red-400">Yüklenemedi</div>' }} />
+            </div>
+          )}
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="form-label">Sıra</label>
+            <input type="number" value={bSort} onChange={e => setBSort(e.target.value)} className="form-input" />
+          </div>
+          <div className="flex flex-col justify-end">
+            <label className="flex items-center gap-2 cursor-pointer h-10">
+              <input type="checkbox" checked={bPublished} onChange={e => setBPublished(e.target.checked)} className="accent-[var(--taboo-primary)] w-4 h-4" />
+              <span className="text-sm">Yayınla</span>
+            </label>
+          </div>
+        </div>
+        <div className="flex gap-2 pt-2">
+          <button onClick={saveBlog} className="btn-primary flex-1">Kaydet</button>
+          <button onClick={() => setShowBlogForm(false)} className="btn-secondary flex-1">İptal</button>
+        </div>
+      </Modal>
     </div>
   )
 }

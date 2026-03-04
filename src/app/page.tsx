@@ -2,21 +2,24 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import type { Product, Category } from '@/lib/supabase'
+import type { Product, Category, BlogPost } from '@/lib/supabase'
 import ProductCard from '@/components/ProductCard'
 
 export default function HomePage() {
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     Promise.all([
       fetch('/api/products').then(r => r.json()),
       fetch('/api/categories').then(r => r.json()),
-    ]).then(([p, c]) => {
+      fetch('/api/blog?limit=3').then(r => r.json()),
+    ]).then(([p, c, b]) => {
       setProducts(p)
       setCategories(c)
+      setBlogPosts(Array.isArray(b) ? b : [])
     }).finally(() => setLoading(false))
   }, [])
 
@@ -134,6 +137,56 @@ export default function HomePage() {
           </div>
         )}
       </section>
+
+      {/* Blog Yazıları */}
+      {blogPosts.length > 0 && (
+        <section className="max-w-6xl mx-auto px-4 py-12">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold">Blog Yazıları</h2>
+            <Link href="/blog" className="text-sm text-[var(--taboo-accent)] hover:underline">
+              Tümünü Gör <i className="fa-solid fa-arrow-right ml-1 text-xs" />
+            </Link>
+          </div>
+          <div className="grid md:grid-cols-3 gap-6">
+            {blogPosts.map(post => (
+              <Link key={post.id} href={`/blog/${post.slug}`} className="group block">
+                <div className="card p-0 overflow-hidden transition-all hover:shadow-lg hover:shadow-purple-500/10">
+                  {/* Cover Image */}
+                  <div className="aspect-video bg-[var(--taboo-bg-light)] relative overflow-hidden">
+                    {post.cover_image_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={post.cover_image_url}
+                        alt={post.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <i className="fa-regular fa-image text-3xl text-[var(--taboo-border)]" />
+                      </div>
+                    )}
+                  </div>
+                  {/* Content */}
+                  <div className="p-4">
+                    <h3 className="font-bold text-base mb-2 text-[var(--taboo-text)] line-clamp-2 group-hover:text-[var(--taboo-accent)] transition-colors">
+                      {post.title}
+                    </h3>
+                    <p className="text-sm text-[var(--taboo-text-muted)] mb-3 line-clamp-2 leading-relaxed">
+                      {post.description}
+                    </p>
+                    <div className="flex items-center justify-between text-xs text-[var(--taboo-text-muted)]">
+                      <span>{post.author}</span>
+                      <span className="text-[var(--taboo-accent)] group-hover:underline">
+                        Devamını Oku <i className="fa-solid fa-arrow-right ml-1" />
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Kırmızı Oda Tanıtımı */}
       <section className="max-w-6xl mx-auto px-4 py-12">
