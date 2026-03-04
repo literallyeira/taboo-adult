@@ -23,7 +23,9 @@ export const metadata: Metadata = {
   title: "Taboo Adult Store",
   description: "Premium yetişkin ürünleri.",
   icons: {
-    icon: "/favicon.ico",
+    icon: "/tabo.png",
+    shortcut: "/tabo.png",
+    apple: "/tabo.png",
   },
 };
 
