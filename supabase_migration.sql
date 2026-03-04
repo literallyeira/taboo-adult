@@ -23,6 +23,7 @@ CREATE TABLE tb_products (
   description TEXT,
   price NUMERIC(10,2) NOT NULL DEFAULT 0,
   image_url TEXT,
+  images JSONB DEFAULT '[]'::jsonb,
   category TEXT,
   in_stock BOOLEAN DEFAULT true,
   sort_order INTEGER DEFAULT 0,

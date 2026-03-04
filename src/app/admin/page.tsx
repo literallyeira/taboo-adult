@@ -85,6 +85,7 @@ export default function AdminPage() {
   const [pPrice, setPPrice] = useState('')
   const [pImage, setPImage] = useState('')
   const [pCategory, setPCategory] = useState('')
+  const [pImages, setPImages] = useState<string[]>([])
   const [pInStock, setPInStock] = useState(true)
   const [pSort, setPSort] = useState('0')
   const [uploading, setUploading] = useState(false)
@@ -117,7 +118,7 @@ export default function AdminPage() {
     'x-admin-password': password,
   }), [password])
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'product' | 'blog' = 'product') => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'product' | 'blog' | 'gallery' = 'product') => {
     const file = e.target.files?.[0]
     if (!file) return
 
@@ -139,6 +140,8 @@ export default function AdminPage() {
 
       if (type === 'product') {
         setPImage(data.url)
+      } else if (type === 'gallery') {
+        setPImages(prev => [...prev, data.url])
       } else {
         setBCoverImage(data.url)
       }
@@ -146,9 +149,12 @@ export default function AdminPage() {
       setUploadError(err instanceof Error ? err.message : 'Yükleme hatası')
     } finally {
       setUploading(false)
-      // Reset file input
       e.target.value = ''
     }
+  }
+
+  const removeGalleryImage = (index: number) => {
+    setPImages(prev => prev.filter((_, i) => i !== index))
   }
 
   const fetchAll = useCallback(async () => {
@@ -196,12 +202,13 @@ export default function AdminPage() {
       setPDesc(product.description || '')
       setPPrice(String(product.price))
       setPImage(product.image_url || '')
+      setPImages(Array.isArray(product.images) ? product.images : [])
       setPCategory(product.category || '')
       setPInStock(product.in_stock)
       setPSort(String(product.sort_order))
     } else {
       setEditProduct(null)
-      setPName(''); setPDesc(''); setPPrice(''); setPImage(''); setPCategory(''); setPInStock(true); setPSort('0')
+      setPName(''); setPDesc(''); setPPrice(''); setPImage(''); setPImages([]); setPCategory(''); setPInStock(true); setPSort('0')
     }
     setShowProductForm(true)
   }
@@ -214,6 +221,7 @@ export default function AdminPage() {
       description: pDesc || null,
       price: Number(pPrice),
       image_url: pImage || null,
+      images: pImages,
       category: pCategory || null,
       in_stock: pInStock,
       sort_order: Number(pSort) || 0,
@@ -785,6 +793,35 @@ export default function AdminPage() {
                 <img src={pImage} alt="Önizleme" className="w-full h-full object-cover" onError={e => { e.currentTarget.style.display = 'none'; const p = e.currentTarget.parentElement; if (p) p.innerHTML = '<div class="w-full h-full flex items-center justify-center text-xs text-red-400">Yüklenemedi</div>' }} />
               </div>
             )}
+          </div>
+        </div>
+        <div>
+          <label className="form-label">Ek Fotoğraflar (Galeri)</label>
+          <div className="space-y-2">
+            <label className="cursor-pointer block">
+              <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp,image/gif" onChange={e => handleImageUpload(e, 'gallery')} disabled={uploading} className="hidden" />
+              <div className={`btn-secondary w-full text-center py-2 ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                {uploading ? <><i className="fa-solid fa-spinner fa-spin mr-2" />Yükleniyor...</> : <><i className="fa-solid fa-images mr-2" />Galeri Fotoğrafı Ekle</>}
+              </div>
+            </label>
+            {pImages.length > 0 && (
+              <div className="grid grid-cols-4 gap-2">
+                {pImages.map((img, idx) => (
+                  <div key={idx} className="relative group aspect-square rounded-lg overflow-hidden bg-[var(--taboo-bg-light)] border border-[var(--taboo-border)]">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={img} alt={`Galeri ${idx + 1}`} className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => removeGalleryImage(idx)}
+                      className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <i className="fa-solid fa-xmark" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <p className="text-[10px] text-[var(--taboo-text-muted)]">Ürün detay sayfasında ana fotoğrafın yanında gösterilecek ek fotoğraflar</p>
           </div>
         </div>
         <div>

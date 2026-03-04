@@ -14,6 +14,7 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true)
   const [quantity, setQuantity] = useState(1)
   const [added, setAdded] = useState(false)
+  const [selectedImage, setSelectedImage] = useState<string | null>(null)
 
   useEffect(() => {
     fetch(`/api/products/${id}`)
@@ -71,13 +72,46 @@ export default function ProductDetailPage() {
       </div>
 
       <div className="grid md:grid-cols-2 gap-8">
-        {/* Image */}
-        <div className="aspect-square bg-[var(--taboo-bg-light)] rounded-2xl overflow-hidden border border-[var(--taboo-border)]">
-          <NSFWBlur
-            imageUrl={product.image_url}
-            alt={product.name}
-            className="rounded-2xl"
-          />
+        {/* Image Gallery */}
+        <div className="space-y-3">
+          {/* Main Image */}
+          <div className="aspect-square bg-[var(--taboo-bg-light)] rounded-2xl overflow-hidden border border-[var(--taboo-border)]">
+            <NSFWBlur
+              imageUrl={selectedImage || product.image_url}
+              alt={product.name}
+              className="rounded-2xl"
+            />
+          </div>
+          {/* Thumbnails */}
+          {product.images && product.images.length > 0 && (
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {/* Main photo thumbnail */}
+              {product.image_url && (
+                <button
+                  onClick={() => setSelectedImage(null)}
+                  className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
+                    !selectedImage ? 'border-[var(--taboo-accent)] ring-1 ring-[var(--taboo-accent)]' : 'border-[var(--taboo-border)] hover:border-[var(--taboo-accent)]/50'
+                  }`}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={product.image_url} alt="Ana foto" className="w-full h-full object-cover" />
+                </button>
+              )}
+              {/* Gallery thumbnails */}
+              {product.images.map((img, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setSelectedImage(img)}
+                  className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
+                    selectedImage === img ? 'border-[var(--taboo-accent)] ring-1 ring-[var(--taboo-accent)]' : 'border-[var(--taboo-border)] hover:border-[var(--taboo-accent)]/50'
+                  }`}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={img} alt={`Foto ${idx + 1}`} className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Details */}

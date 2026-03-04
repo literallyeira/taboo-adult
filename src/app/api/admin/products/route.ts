@@ -28,7 +28,7 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json()
-    const { name, description, price, image_url, category, in_stock, sort_order } = body
+    const { name, description, price, image_url, images, category, in_stock, sort_order } = body
 
     if (!name || price == null) {
       return NextResponse.json({ error: 'Name and price required' }, { status: 400 })
@@ -41,6 +41,7 @@ export async function POST(request: Request) {
         description: description || null,
         price: Number(price),
         image_url: image_url || null,
+        images: images || [],
         category: category || null,
         in_stock: in_stock !== false,
         sort_order: sort_order || 0,

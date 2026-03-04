@@ -22,6 +22,7 @@ export interface Product {
   description: string | null
   price: number
   image_url: string | null
+  images: string[]
   category: string | null
   in_stock: boolean
   sort_order: number
