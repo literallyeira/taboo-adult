@@ -255,14 +255,37 @@ export default function AdminPage() {
   }
 
   // === Order actions ===
+  const [editOrderStatus, setEditOrderStatus] = useState<OrderData | null>(null)
+  const [orderStatusModal, setOrderStatusModal] = useState(false)
+  const [selectedStatus, setSelectedStatus] = useState<OrderStatus>('pending')
+
+  const openOrderStatusModal = (order: OrderData) => {
+    setEditOrderStatus(order)
+    setSelectedStatus(order.status)
+    setOrderStatusModal(true)
+  }
+
   const updateOrderStatus = async (id: string, status: OrderStatus) => {
     await fetch('/api/admin/orders', {
       method: 'PUT',
       headers: headers(),
       body: JSON.stringify({ id, status }),
     })
+    setOrderStatusModal(false)
     fetchAll()
   }
+
+  const deleteOrder = async (id: string) => {
+    if (!confirm('Bu siparişi tamamen silmek istediğinize emin misiniz? Bu işlem geri alınamaz!')) return
+    await fetch(`/api/admin/orders?id=${id}`, { method: 'DELETE', headers: headers() })
+    fetchAll()
+  }
+
+  // Pagination for orders
+  const [orderPage, setOrderPage] = useState(1)
+  const ordersPerPage = 5
+  const totalOrderPages = Math.ceil(orders.length / ordersPerPage)
+  const paginatedOrders = orders.slice((orderPage - 1) * ordersPerPage, orderPage * ordersPerPage)
 
   // === Blog actions ===
   const openBlogForm = (blog?: BlogPost) => {
@@ -487,9 +510,32 @@ export default function AdminPage() {
       {/* ===== ORDERS ===== */}
       {tab === 'orders' && (
         <div>
-          <h2 className="text-lg font-semibold mb-4">Siparişler ({orders.length})</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold">Siparişler ({orders.length})</h2>
+            {totalOrderPages > 1 && (
+              <div className="flex items-center gap-2 text-sm">
+                <button
+                  onClick={() => setOrderPage(p => Math.max(1, p - 1))}
+                  disabled={orderPage === 1}
+                  className="btn-secondary text-xs px-3 py-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <i className="fa-solid fa-chevron-left" />
+                </button>
+                <span className="text-[var(--taboo-text-muted)]">
+                  Sayfa {orderPage} / {totalOrderPages}
+                </span>
+                <button
+                  onClick={() => setOrderPage(p => Math.min(totalOrderPages, p + 1))}
+                  disabled={orderPage === totalOrderPages}
+                  className="btn-secondary text-xs px-3 py-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <i className="fa-solid fa-chevron-right" />
+                </button>
+              </div>
+            )}
+          </div>
           <div className="space-y-3">
-            {orders.map(order => {
+            {paginatedOrders.map(order => {
               const dInfo = DELIVERY_LABELS[order.delivery_type] || DELIVERY_LABELS.pickup
               return (
                 <div key={order.id} className="card p-4 space-y-3">
@@ -529,28 +575,14 @@ export default function AdminPage() {
                   </div>
 
                   {/* Status buttons */}
-                  {order.status !== 'completed' && order.status !== 'cancelled' && (
-                    <div className="flex flex-wrap gap-2">
-                      {order.status === 'pending' && (
-                        <button onClick={() => updateOrderStatus(order.id, 'preparing')} className="btn-secondary text-xs">
-                          <i className="fa-solid fa-box mr-1" />Hazırlanıyor
-                        </button>
-                      )}
-                      {order.status === 'preparing' && (
-                        <button onClick={() => updateOrderStatus(order.id, 'ready')} className="btn-secondary text-xs">
-                          <i className="fa-solid fa-circle-check mr-1" />Hazır
-                        </button>
-                      )}
-                      {order.status === 'ready' && (
-                        <button onClick={() => updateOrderStatus(order.id, 'completed')} className="btn-primary text-xs">
-                          <i className="fa-solid fa-check-double mr-1" />Tamamla
-                        </button>
-                      )}
-                      <button onClick={() => updateOrderStatus(order.id, 'cancelled')} className="btn-danger text-xs">
-                        <i className="fa-solid fa-xmark mr-1" />İptal Et
-                      </button>
-                    </div>
-                  )}
+                  <div className="flex flex-wrap gap-2">
+                    <button onClick={() => openOrderStatusModal(order)} className="btn-secondary text-xs">
+                      <i className="fa-solid fa-edit mr-1" />Durum Düzenle
+                    </button>
+                    <button onClick={() => deleteOrder(order.id)} className="btn-danger text-xs">
+                      <i className="fa-solid fa-trash mr-1" />Siparişi Sil
+                    </button>
+                  </div>
                 </div>
               )
             })}
@@ -560,6 +592,44 @@ export default function AdminPage() {
           </div>
         </div>
       )}
+
+      {/* ===== ORDER STATUS MODAL ===== */}
+      <Modal open={orderStatusModal} onClose={() => setOrderStatusModal(false)} maxWidth="max-w-md">
+        <h3 className="font-bold text-lg mb-4">Sipariş Durumu Düzenle</h3>
+        {editOrderStatus && (
+          <>
+            <div className="mb-4 p-3 bg-[var(--taboo-bg-light)] rounded-lg">
+              <p className="text-sm font-semibold mb-1">{editOrderStatus.customer_name}</p>
+              <p className="text-xs text-[var(--taboo-text-muted)]">Sipariş ID: {editOrderStatus.id.substring(0, 8)}...</p>
+            </div>
+            <div>
+              <label className="form-label">Durum *</label>
+              <select
+                value={selectedStatus}
+                onChange={e => setSelectedStatus(e.target.value as OrderStatus)}
+                className="form-input"
+              >
+                <option value="pending">Beklemede</option>
+                <option value="preparing">Hazırlanıyor</option>
+                <option value="ready">Hazır</option>
+                <option value="completed">Tamamlandı</option>
+                <option value="cancelled">İptal Edildi</option>
+              </select>
+            </div>
+            <div className="flex gap-2 pt-2">
+              <button
+                onClick={() => updateOrderStatus(editOrderStatus.id, selectedStatus)}
+                className="btn-primary flex-1"
+              >
+                Kaydet
+              </button>
+              <button onClick={() => setOrderStatusModal(false)} className="btn-secondary flex-1">
+                İptal
+              </button>
+            </div>
+          </>
+        )}
+      </Modal>
 
       {/* ===== BLOG ===== */}
       {tab === 'blog' && (

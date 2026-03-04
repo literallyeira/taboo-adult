@@ -53,3 +53,41 @@ export async function PUT(request: Request) {
   }
 }
 
+export async function DELETE(request: Request) {
+  const err = checkAdmin(request)
+  if (err) return err
+
+  try {
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
+
+    if (!id) {
+      return NextResponse.json({ error: 'Order id required' }, { status: 400 })
+    }
+
+    // Önce order_items'ı sil
+    const { error: itemsError } = await supabase
+      .from('tb_order_items')
+      .delete()
+      .eq('order_id', id)
+
+    if (itemsError) {
+      return NextResponse.json({ error: itemsError.message }, { status: 500 })
+    }
+
+    // Sonra order'ı sil
+    const { error: orderError } = await supabase
+      .from('tb_orders')
+      .delete()
+      .eq('id', id)
+
+    if (orderError) {
+      return NextResponse.json({ error: orderError.message }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true })
+  } catch {
+    return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
+  }
+}
+
