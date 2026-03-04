@@ -43,8 +43,9 @@ export default function HomePage() {
             Arzularınızı<br />
             <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-purple-400 bg-clip-text text-transparent">Keşfedin</span>
           </h1>
-          <p className="text-[var(--taboo-text-muted)] max-w-lg mx-auto mb-8 text-base leading-relaxed">
-            Los Santos&apos;un en özel yetişkin ürünleri mağazası. Özenle seçilmiş, yüksek kaliteli ürünlerle gizli ve güvenli bir alışveriş deneyimi sunuyoruz.
+          <p className="text-[var(--taboo-text-muted)] max-w-xl mx-auto mb-8 text-base leading-relaxed">
+            Los Santos&apos;un en özel yetişkin ürünleri mağazası.<br className="hidden sm:block" />
+            Özenle seçilmiş, kaliteli ürünlerle gizli ve güvenli alışveriş deneyimi.
           </p>
           <Link href="/urunler" className="btn-primary text-base px-8 py-3">
             Ürünleri İncele

@@ -16,7 +16,7 @@ export default function Header() {
         </Link>
 
         {/* Nav */}
-        <nav className="flex items-center gap-6">
+        <nav className="flex items-center gap-4 sm:gap-6">
           <Link
             href="/urunler"
             className="text-sm text-[var(--taboo-text-muted)] hover:text-[var(--taboo-text)] transition-colors"
@@ -29,6 +29,26 @@ export default function Header() {
           >
             Sipariş Takip
           </Link>
+
+          {/* Kırmızı Oda */}
+          <Link
+            href="/kirmizi-oda"
+            className="p-2 rounded-lg hover:bg-red-900/30 transition-colors group"
+            title="Kırmızı Oda"
+          >
+            <i className="fa-solid fa-door-closed text-lg text-red-400 group-hover:text-red-300 transition-colors" />
+          </Link>
+
+          {/* Facebrowser */}
+          <a
+            href="https://facebrowser-tr.gta.world/pages/taboo"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-2 rounded-lg hover:bg-blue-900/30 transition-colors group"
+            title="Facebrowser"
+          >
+            <i className="fa-brands fa-facebook text-lg text-blue-400 group-hover:text-blue-300 transition-colors" />
+          </a>
 
           {/* Cart */}
           <Link href="/sepet" className="relative p-2 rounded-lg hover:bg-[var(--taboo-bg-light)] transition-colors group">
