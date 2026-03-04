@@ -3,13 +3,14 @@ import { supabase } from '@/lib/supabase'
 
 export async function GET(
   request: Request,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const { slug } = await params
     const { data, error } = await supabase
       .from('tb_blog_posts')
       .select('*')
-      .eq('slug', params.slug)
+      .eq('slug', slug)
       .eq('published', true)
       .single()
 
