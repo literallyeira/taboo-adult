@@ -138,6 +138,40 @@ export default function HomePage() {
         )}
       </section>
 
+      {/* CTA */}
+      <section className="max-w-6xl mx-auto px-4 py-16">
+        <div className="card text-center py-12 bg-gradient-to-br from-purple-950/40 to-[var(--taboo-bg-card)] border-purple-500/20">
+          <h2 className="text-2xl font-bold mb-3">Online Sipariş Ver</h2>
+          <p className="text-[var(--taboo-text-muted)] max-w-md mx-auto mb-6">
+            Siparişini online ver, mağazamızdan teslim al veya kargo ile gönderelim. Kolay, hızlı ve gizli.
+          </p>
+          <Link href="/urunler" className="btn-primary">Alışverişe Başla</Link>
+        </div>
+      </section>
+
+      {/* Kırmızı Oda Tanıtımı */}
+      <section className="max-w-6xl mx-auto px-4 py-12">
+        <div className="red-room-card text-center animate-red-pulse">
+          <div className="relative z-10">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-900/50 flex items-center justify-center border border-red-500/30">
+              <i className="fa-solid fa-door-closed text-2xl text-red-400" />
+            </div>
+            <h2 className="text-2xl md:text-3xl font-bold mb-3 text-red-400">Kırmızı Oda</h2>
+            <p className="text-red-300/80 max-w-xl mx-auto mb-4 text-sm leading-relaxed">
+              Mağazamızın en gizemli köşesi... Kırmızı Oda, en cesur fantezileriniz için tasarlanmış
+              özel bir deneyim alanıdır. Bu gizli oda, sadece seçilmiş müşterilerimize açıktır.
+              İçeride ne olduğunu keşfetmek için mağazamızı ziyaret edin ve personelimizle konuşun.
+            </p>
+            <p className="text-xs text-red-400/60 mb-6">
+              <i className="fa-solid fa-lock mr-1" />Gizli oda - Detaylı bilgi için mağazamızı ziyaret edin veya bizi arayın.
+            </p>
+            <Link href="/kirmizi-oda" className="inline-flex items-center gap-2 px-6 py-3 bg-red-700/30 hover:bg-red-700/50 border border-red-500/30 hover:border-red-500/50 rounded-xl text-red-300 font-semibold text-sm transition-all">
+              <i className="fa-solid fa-eye" /> Kırmızı Oda&apos;yı Keşfet
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* Blog Yazıları */}
       {blogPosts.length > 0 && (
         <section className="max-w-6xl mx-auto px-4 py-12">
@@ -187,40 +221,6 @@ export default function HomePage() {
           </div>
         </section>
       )}
-
-      {/* Kırmızı Oda Tanıtımı */}
-      <section className="max-w-6xl mx-auto px-4 py-12">
-        <div className="red-room-card text-center animate-red-pulse">
-          <div className="relative z-10">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-900/50 flex items-center justify-center border border-red-500/30">
-              <i className="fa-solid fa-door-closed text-2xl text-red-400" />
-            </div>
-            <h2 className="text-2xl md:text-3xl font-bold mb-3 text-red-400">Kırmızı Oda</h2>
-            <p className="text-red-300/80 max-w-xl mx-auto mb-4 text-sm leading-relaxed">
-              Mağazamızın en gizemli köşesi... Kırmızı Oda, en cesur fantezileriniz için tasarlanmış
-              özel bir deneyim alanıdır. Bu gizli oda, sadece seçilmiş müşterilerimize açıktır.
-              İçeride ne olduğunu keşfetmek için mağazamızı ziyaret edin ve personelimizle konuşun.
-            </p>
-            <p className="text-xs text-red-400/60 mb-6">
-              <i className="fa-solid fa-lock mr-1" />Gizli oda - Detaylı bilgi için mağazamızı ziyaret edin veya bizi arayın.
-            </p>
-            <Link href="/kirmizi-oda" className="inline-flex items-center gap-2 px-6 py-3 bg-red-700/30 hover:bg-red-700/50 border border-red-500/30 hover:border-red-500/50 rounded-xl text-red-300 font-semibold text-sm transition-all">
-              <i className="fa-solid fa-eye" /> Kırmızı Oda&apos;yı Keşfet
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="max-w-6xl mx-auto px-4 py-16">
-        <div className="card text-center py-12 bg-gradient-to-br from-purple-950/40 to-[var(--taboo-bg-card)] border-purple-500/20">
-          <h2 className="text-2xl font-bold mb-3">Online Sipariş Ver</h2>
-          <p className="text-[var(--taboo-text-muted)] max-w-md mx-auto mb-6">
-            Siparişini online ver, mağazamızdan teslim al veya kargo ile gönderelim. Kolay, hızlı ve gizli.
-          </p>
-          <Link href="/urunler" className="btn-primary">Alışverişe Başla</Link>
-        </div>
-      </section>
     </div>
   )
 }
