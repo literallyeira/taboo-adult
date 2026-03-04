@@ -43,10 +43,10 @@ export default function Header() {
             href="https://facebrowser-tr.gta.world/pages/taboo"
             target="_blank"
             rel="noopener noreferrer"
-            className="p-2 rounded-lg hover:bg-blue-900/30 transition-colors group"
+            className="p-2 rounded-lg hover:bg-red-900/30 transition-colors group"
             title="Facebrowser"
           >
-            <i className="fa-solid fa-globe text-lg text-blue-400 group-hover:text-blue-300 transition-colors" />
+            <i className="fa-solid fa-globe text-lg text-red-400 group-hover:text-red-300 transition-colors" />
           </a>
 
           {/* Cart */}
