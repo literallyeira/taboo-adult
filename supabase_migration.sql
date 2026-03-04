@@ -53,6 +53,7 @@ ALTER TABLE tb_orders ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Public read tb_orders" ON tb_orders FOR SELECT TO anon USING (true);
 CREATE POLICY "Public insert tb_orders" ON tb_orders FOR INSERT TO anon WITH CHECK (true);
 CREATE POLICY "Public update tb_orders" ON tb_orders FOR UPDATE TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "Public delete tb_orders" ON tb_orders FOR DELETE TO anon USING (true);
 
 -- Siparis kalemleri
 CREATE TABLE tb_order_items (
@@ -66,6 +67,7 @@ CREATE TABLE tb_order_items (
 ALTER TABLE tb_order_items ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Public read tb_order_items" ON tb_order_items FOR SELECT TO anon USING (true);
 CREATE POLICY "Public insert tb_order_items" ON tb_order_items FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "Public delete tb_order_items" ON tb_order_items FOR DELETE TO anon USING (true);
 
 -- Ornek kategoriler
 INSERT INTO tb_categories (name, slug, sort_order) VALUES
