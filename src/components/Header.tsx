@@ -7,20 +7,12 @@ export default function Header() {
   const { totalItems } = useCart()
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-[var(--taboo-border)] bg-[var(--taboo-bg)]/90 backdrop-blur-md">
+    <header className="sticky top-0 z-50 w-full border-b border-[var(--taboo-border)] bg-[var(--taboo-bg)]/95 backdrop-blur-sm">
       <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-3 group">
+        <Link href="/" className="flex items-center group">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/tabo.png" alt="TABOO" className="h-12 w-auto flex-shrink-0" />
-          <div>
-            <span className="text-lg font-bold tracking-wide text-[var(--taboo-text)] group-hover:text-[var(--taboo-primary-light)] transition-colors">
-              TABOO
-            </span>
-            <span className="hidden sm:inline text-xs text-[var(--taboo-text-muted)] ml-2 tracking-widest uppercase">
-              Adult Store
-            </span>
-          </div>
         </Link>
 
         {/* Nav */}
