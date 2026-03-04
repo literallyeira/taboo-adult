@@ -33,10 +33,9 @@ export default function Header() {
           {/* Kırmızı Oda */}
           <Link
             href="/kirmizi-oda"
-            className="p-2 rounded-lg hover:bg-red-900/30 transition-colors group"
-            title="Kırmızı Oda"
+            className="text-sm text-red-400 hover:text-red-300 transition-colors"
           >
-            <i className="fa-solid fa-door-closed text-lg text-red-400 group-hover:text-red-300 transition-colors" />
+            Kırmızı Oda
           </Link>
 
           {/* Facebrowser */}
@@ -47,7 +46,7 @@ export default function Header() {
             className="p-2 rounded-lg hover:bg-blue-900/30 transition-colors group"
             title="Facebrowser"
           >
-            <i className="fa-brands fa-facebook text-lg text-blue-400 group-hover:text-blue-300 transition-colors" />
+            <i className="fa-solid fa-globe text-lg text-blue-400 group-hover:text-blue-300 transition-colors" />
           </a>
 
           {/* Cart */}
