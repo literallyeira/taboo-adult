@@ -20,7 +20,7 @@ export default function RedRoomPage() {
           '/redroom/Screenshot_5.png',
           '/redroom/Screenshot_6.png',
           '/redroom/Screenshot_7.png',
-        ]
+        ].filter(img => !img.includes('Screenshot_2')) // Screenshot_2'yi atla
         
         // Gerçek dosyaları kontrol et
         const existingImages: string[] = []
