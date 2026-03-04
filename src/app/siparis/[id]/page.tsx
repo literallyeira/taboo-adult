@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import type { OrderStatus, DeliveryType } from '@/lib/supabase'
@@ -43,6 +43,7 @@ export default function OrderTrackPage() {
   const [order, setOrder] = useState<OrderData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     fetch(`/api/orders/${id}`)
@@ -112,10 +113,28 @@ export default function OrderTrackPage() {
           </div>
         </div>
 
-        {/* Order ID */}
-        <div className="mb-6 p-3 rounded-lg bg-purple-950/30 border border-purple-500/10">
+        {/* Order ID + Warning */}
+        <div className="mb-4 p-3 rounded-lg bg-purple-950/30 border border-purple-500/10">
           <p className="text-[10px] text-[var(--taboo-text-muted)] uppercase tracking-wider mb-1">Sipariş Numarası</p>
-          <p className="font-mono text-sm text-[var(--taboo-accent)] select-all break-all">{order.id}</p>
+          <div className="flex items-center gap-2">
+            <p className="font-mono text-sm text-[var(--taboo-accent)] select-all break-all flex-1">{order.id}</p>
+            <button
+              onClick={() => { navigator.clipboard.writeText(order.id); setCopied(true); setTimeout(() => setCopied(false), 2000) }}
+              className="btn-secondary text-xs px-3 py-1.5 flex-shrink-0"
+            >
+              {copied ? (
+                <><i className="fa-solid fa-check mr-1" />Kopyalandı</>
+              ) : (
+                <><i className="fa-regular fa-copy mr-1" />Kopyala</>
+              )}
+            </button>
+          </div>
+        </div>
+        <div className="mb-6 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30 flex items-start gap-2">
+          <i className="fa-solid fa-triangle-exclamation text-yellow-400 mt-0.5 flex-shrink-0" />
+          <p className="text-xs text-yellow-300 leading-relaxed">
+            <strong>Sipariş takibiniz için lütfen fatura numaranızı kaydediniz!</strong> Bu sayfayı kapattığınızda sipariş numaranız olmadan siparişinize tekrar ulaşamazsınız.
+          </p>
         </div>
 
         {/* Status */}
