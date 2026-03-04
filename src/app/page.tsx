@@ -112,7 +112,7 @@ export default function HomePage() {
       )}
 
       {/* Featured Products */}
-      <section className="max-w-7xl mx-auto px-4 py-12">
+      <section className="max-w-6xl mx-auto px-4 py-12">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold">Öne Çıkanlar</h2>
           <Link href="/urunler" className="text-sm text-[var(--taboo-accent)] hover:underline">
@@ -173,7 +173,10 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Blog Yazıları */}
+      {/* Yorumlar */}
+      <Comments />
+
+      {/* Blog Yazıları - En altta */}
       {blogPosts.length > 0 && (
         <section className="max-w-6xl mx-auto px-4 py-12">
           <div className="flex items-center justify-between mb-6">
@@ -222,9 +225,6 @@ export default function HomePage() {
           </div>
         </section>
       )}
-
-      {/* Yorumlar */}
-      <Comments />
     </div>
   )
 }
