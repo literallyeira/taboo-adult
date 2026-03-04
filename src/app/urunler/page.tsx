@@ -122,9 +122,12 @@ function ProductsContent() {
               özel bir deneyim alanıdır. Bu gizli oda, sadece seçilmiş müşterilerimize açıktır.
               İçeride ne olduğunu keşfetmek için mağazamızı ziyaret edin ve personelimizle konuşun.
             </p>
-            <p className="text-xs text-red-400/60">
+            <p className="text-xs text-red-400/60 mb-4">
               <i className="fa-solid fa-lock mr-1" />Gizli oda - Detaylı bilgi için mağazamızı ziyaret edin.
             </p>
+            <Link href="/kirmizi-oda" className="inline-flex items-center gap-2 px-4 py-2 bg-red-700/30 hover:bg-red-700/50 border border-red-500/30 hover:border-red-500/50 rounded-lg text-red-300 font-semibold text-xs transition-all">
+              <i className="fa-solid fa-eye" /> Keşfet
+            </Link>
           </div>
         </div>
       </div>

@@ -147,6 +147,9 @@ export default function HomePage() {
             <p className="text-xs text-red-400/60 mb-6">
               <i className="fa-solid fa-lock mr-1" />Gizli oda - Detaylı bilgi için mağazamızı ziyaret edin veya bizi arayın.
             </p>
+            <Link href="/kirmizi-oda" className="inline-flex items-center gap-2 px-6 py-3 bg-red-700/30 hover:bg-red-700/50 border border-red-500/30 hover:border-red-500/50 rounded-xl text-red-300 font-semibold text-sm transition-all">
+              <i className="fa-solid fa-eye" /> Kırmızı Oda&apos;yı Keşfet
+            </Link>
           </div>
         </div>
       </section>
