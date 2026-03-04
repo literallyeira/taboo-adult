@@ -96,8 +96,9 @@ export default function OrderTrackPage() {
               </div>
             </div>
             <p className="text-[10px] text-[var(--taboo-text-muted)] mt-2">
-              <i className="fa-solid fa-location-dot mr-1" />Vespucci Blvd, Los Santos<br />
-              <i className="fa-solid fa-phone mr-1" />Tel: #TABOO
+              <i className="fa-solid fa-location-dot mr-1" />Palomino Ave, Vespucci Blvd.<br />
+              Little Seoul, Los Santos, San Andreas<br />
+              <i className="fa-solid fa-phone mr-1" />651 24 860 - Skylar | 527 06 458 - Maggie | 936 78 42 - Lexi
             </p>
           </div>
           <div className="text-right">

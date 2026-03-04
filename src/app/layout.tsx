@@ -69,10 +69,14 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               </div>
 
               <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-[var(--taboo-text-muted)]">
-                <div className="flex items-center gap-4">
+                <div className="flex flex-col md:flex-row items-center gap-4">
                   <span className="text-[var(--taboo-accent)] font-semibold">TABOO</span>
-                  <span><i className="fa-solid fa-location-dot mr-1" /> Vespucci Blvd, Los Santos</span>
-                  <span><i className="fa-solid fa-phone mr-1" /> #TABOO</span>
+                  <span><i className="fa-solid fa-location-dot mr-1" /> Palomino Ave, Vespucci Blvd. Little Seoul, Los Santos, San Andreas</span>
+                  <div className="flex items-center gap-3">
+                    <span><i className="fa-solid fa-phone mr-1" /> 651 24 860 - Skylar</span>
+                    <span>527 06 458 - Maggie</span>
+                    <span>936 78 42 - Lexi</span>
+                  </div>
                 </div>
                 <p>&copy; 2026 Taboo Adult Store - Lisanslı İşletme</p>
               </div>
