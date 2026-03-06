@@ -3,7 +3,6 @@
 import Link from 'next/link'
 import type { Product } from '@/lib/supabase'
 import { useCart } from './CartProvider'
-import NSFWBlur from './NSFWBlur'
 
 export default function ProductCard({ product }: { product: Product }) {
   const { addItem } = useCart()
@@ -24,11 +23,19 @@ export default function ProductCard({ product }: { product: Product }) {
       <div className="card p-0 overflow-hidden transition-all hover:shadow-lg hover:shadow-purple-500/10">
         {/* Image */}
         <div className="aspect-square bg-[var(--taboo-bg-light)] relative overflow-hidden">
-          <NSFWBlur
-            imageUrl={product.image_url}
-            alt={product.name}
-            className="aspect-square"
-          />
+          {product.image_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={product.image_url}
+              alt={product.name}
+              className="w-full h-full object-cover"
+              loading="lazy"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <i className="fa-regular fa-image text-2xl text-[var(--taboo-border)]" />
+            </div>
+          )}
           {!product.in_stock && (
             <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-10">
               <span className="text-xs font-semibold text-red-400 uppercase tracking-wider">Tükendi</span>

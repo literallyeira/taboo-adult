@@ -5,7 +5,6 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import type { Product } from '@/lib/supabase'
 import { useCart } from '@/components/CartProvider'
-import NSFWBlur from '@/components/NSFWBlur'
 
 export default function ProductDetailPage() {
   const { id } = useParams()
@@ -76,11 +75,18 @@ export default function ProductDetailPage() {
         <div className="space-y-3">
           {/* Main Image */}
           <div className="aspect-square bg-[var(--taboo-bg-light)] rounded-2xl overflow-hidden border border-[var(--taboo-border)]">
-            <NSFWBlur
-              imageUrl={selectedImage || product.image_url}
-              alt={product.name}
-              className="rounded-2xl"
-            />
+            {selectedImage || product.image_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={selectedImage || product.image_url || ''}
+                alt={product.name}
+                className="w-full h-full object-cover rounded-2xl"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <i className="fa-regular fa-image text-3xl text-[var(--taboo-border)]" />
+              </div>
+            )}
           </div>
           {/* Thumbnails */}
           {product.images && product.images.length > 0 && (

@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import { useCart } from '@/components/CartProvider'
-import NSFWBlur from '@/components/NSFWBlur'
 
 export default function CartPage() {
   const { items, totalItems, totalPrice, removeItem, updateQuantity, clearCart } = useCart()
@@ -34,11 +33,14 @@ export default function CartPage() {
           <div key={item.id} className="card flex items-center gap-4 p-4">
             {/* Image */}
             <div className="w-16 h-16 rounded-lg bg-[var(--taboo-bg-light)] overflow-hidden flex-shrink-0">
-              <NSFWBlur
-                imageUrl={item.image_url}
-                alt={item.name}
-                className="w-16 h-16 rounded-lg"
-              />
+              {item.image_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={item.image_url} alt={item.name} className="w-16 h-16 rounded-lg object-cover" loading="lazy" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <i className="fa-regular fa-image text-sm text-[var(--taboo-border)]" />
+                </div>
+              )}
             </div>
 
             {/* Info */}
