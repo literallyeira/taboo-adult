@@ -1,50 +1,20 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 
-export default function RedRoomPage() {
-  const [images, setImages] = useState<string[]>([])
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const [loading, setLoading] = useState(true)
+const RED_ROOM_IMAGES = [
+  '/redroom/Screenshot_1.png',
+  '/redroom/Screenshot_3.png',
+  '/redroom/Screenshot_4.png',
+  '/redroom/Screenshot_5.png',
+  '/redroom/Screenshot_6.png',
+  '/redroom/Screenshot_7.png',
+]
 
-  useEffect(() => {
-    // Redroom klasöründeki fotoğrafları yükle
-    const loadImages = async () => {
-      try {
-        // Redroom klasöründeki bilinen dosyaları kontrol et
-        const imageFiles = [
-          '/redroom/Screenshot_1.png',
-          '/redroom/Screenshot_3.png',
-          '/redroom/Screenshot_4.png',
-          '/redroom/Screenshot_5.png',
-          '/redroom/Screenshot_6.png',
-          '/redroom/Screenshot_7.png',
-        ].filter(img => !img.includes('Screenshot_2')) // Screenshot_2'yi atla
-        
-        // Gerçek dosyaları kontrol et
-        const existingImages: string[] = []
-        for (const img of imageFiles) {
-          try {
-            const response = await fetch(img, { method: 'HEAD' })
-            if (response.ok) {
-              existingImages.push(img)
-            }
-          } catch {
-            // Dosya yoksa atla
-          }
-        }
-        
-        setImages(existingImages)
-      } catch (error) {
-        console.error('Fotoğraf yükleme hatası:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-    
-    loadImages()
-  }, [])
+export default function RedRoomPage() {
+  const images = RED_ROOM_IMAGES
+  const [currentIndex, setCurrentIndex] = useState(0)
 
   // Otomatik slideshow
   useEffect(() => {
@@ -92,12 +62,7 @@ export default function RedRoomPage() {
 
       {/* Photo Gallery / Slideshow */}
       <section className="max-w-6xl mx-auto px-4 py-12">
-        {loading ? (
-          <div className="card text-center py-20">
-            <i className="fa-solid fa-spinner fa-spin text-4xl text-red-400 mb-4" />
-            <p className="text-[var(--taboo-text-muted)]">Fotoğraflar yükleniyor...</p>
-          </div>
-        ) : images.length === 0 ? (
+        {images.length === 0 ? (
           <div className="card text-center py-20">
             <i className="fa-solid fa-image text-4xl text-[var(--taboo-text-muted)] mb-4" />
             <p className="text-[var(--taboo-text-muted)]">Henüz fotoğraf eklenmemiş.</p>
@@ -106,21 +71,15 @@ export default function RedRoomPage() {
           <div className="card p-0 overflow-hidden">
             <div className="relative aspect-video bg-black">
               {/* Current Image */}
-              {images.map((img, index) => (
-                <div
-                  key={img}
-                  className={`absolute inset-0 transition-opacity duration-1000 ${
-                    index === currentIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
-                  }`}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={img}
-                    alt={`Kırmızı Oda ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              ))}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                key={images[currentIndex]}
+                src={images[currentIndex]}
+                alt={`Kırmızı Oda ${currentIndex + 1}`}
+                className="absolute inset-0 w-full h-full object-cover transition-opacity duration-500 opacity-100"
+                loading="eager"
+                decoding="async"
+              />
 
               {/* Navigation Arrows */}
               {images.length > 1 && (

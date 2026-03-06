@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
+const COMMENTS_CACHE_HEADERS = {
+  'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=180',
+}
+
 // Spam koruması - IP bazlı rate limiting
 const recentComments = new Map<string, number[]>()
 
@@ -39,7 +43,7 @@ export async function GET() {
   try {
     const { data, error } = await supabase
       .from('tb_comments')
-      .select('*')
+      .select('id, name, comment, rating, created_at, approved')
       .eq('approved', true)
       .order('created_at', { ascending: false })
       .limit(50)
@@ -48,7 +52,7 @@ export async function GET() {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    return NextResponse.json(data || [])
+    return NextResponse.json(data || [], { headers: COMMENTS_CACHE_HEADERS })
   } catch {
     return NextResponse.json({ error: 'Bir hata oluştu' }, { status: 500 })
   }
