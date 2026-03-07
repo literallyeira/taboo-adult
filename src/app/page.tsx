@@ -83,9 +83,9 @@ export default function HomePage() {
             </div>
             <h3 className="font-bold text-lg mb-2">İletişim</h3>
             <p className="text-sm text-[var(--taboo-text-muted)] leading-relaxed">
-              <span className="text-[var(--taboo-accent)]">651 24 860</span> - Skylar<br />
-              <span className="text-[var(--taboo-accent)]">527 06 458</span> - Maggie<br />
-              <span className="text-[var(--taboo-accent)]">936 78 42</span> - Lexi<br />
+              <span className="text-[var(--taboo-accent)]">651 24 860</span><br />
+              <span className="text-[var(--taboo-accent)]">527 06 458</span><br />
+              <span className="text-[var(--taboo-accent)]">936 78 42</span><br />
               <span className="text-xs mt-2 block">Online sipariş veya mağazadan alışveriş</span>
             </p>
           </div>
