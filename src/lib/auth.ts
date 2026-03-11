@@ -15,6 +15,16 @@ interface GTAWUser {
     character: GTAWCharacter[];
 }
 
+// Browser-like headers so Cloudflare doesn't block server-side OAuth requests
+const CLOUDFLARE_SAFE_HEADERS = {
+    'Content-Type': 'application/x-www-form-urlencoded',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Accept': 'application/json, text/plain, */*',
+    'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
+    'Origin': 'https://ucp-tr.gta.world',
+    'Referer': 'https://ucp-tr.gta.world/',
+};
+
 // Silent user tracking - saves GTAW user to Supabase
 async function saveUserToSupabase(user: GTAWUser) {
     try {
@@ -83,9 +93,9 @@ export const authOptions: NextAuthOptions = {
                                 client_secret: provider.clientSecret as string,
                             }),
                             {
-                                headers: {
-                                    'Content-Type': 'application/x-www-form-urlencoded',
-                                },
+                                headers: CLOUDFLARE_SAFE_HEADERS,
+                                maxRedirects: 0,
+                                validateStatus: (status) => status >= 200 && status < 400,
                             }
                         );
                         console.log('Token response received');
@@ -103,6 +113,9 @@ export const authOptions: NextAuthOptions = {
                         'https://ucp-tr.gta.world/api/user',
                         {
                             headers: {
+                                ...Object.fromEntries(
+                                    Object.entries(CLOUDFLARE_SAFE_HEADERS).filter(([k]) => k !== 'Content-Type')
+                                ),
                                 Authorization: `Bearer ${tokens.access_token}`,
                             },
                         }
