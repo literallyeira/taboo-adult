@@ -68,12 +68,14 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Cannot match application with itself' }, { status: 400 });
         }
 
+        const [normalizedApp1Id, normalizedApp2Id] = [application1Id, application2Id].sort();
+
         // Insert match
         const { data: match, error } = await supabase
             .from('matches')
             .insert({
-                application_1_id: application1Id,
-                application_2_id: application2Id,
+                application_1_id: normalizedApp1Id,
+                application_2_id: normalizedApp2Id,
                 created_by: 'admin',
                 created_by_admin: adminName
             })

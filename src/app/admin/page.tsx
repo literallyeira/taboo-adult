@@ -11,6 +11,20 @@ interface MatchWithApps extends Match {
     application_2: Application;
 }
 
+const getMatchPairKey = ({ application_1_id, application_2_id }: Pick<Match, 'application_1_id' | 'application_2_id'>) =>
+    [application_1_id, application_2_id].sort().join(':');
+
+const dedupeMatchesByPair = (source: MatchWithApps[]) => {
+    const seen = new Set<string>();
+
+    return source.filter(match => {
+        const key = getMatchPairKey(match);
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
+};
+
 export default function AdminPage() {
     const { data: session, status: sessionStatus } = useSession();
     const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -22,6 +36,7 @@ export default function AdminPage() {
     const [matchesPage, setMatchesPage] = useState(1);
     const [matchesLimit] = useState(50);
     const [loadingMatches, setLoadingMatches] = useState(false);
+    const [loadingAllMatchesForApps, setLoadingAllMatchesForApps] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -247,6 +262,7 @@ export default function AdminPage() {
     };
 
     const fetchAllMatchesForApps = async (savedPassword?: string) => {
+        setLoadingAllMatchesForApps(true);
         try {
             const res = await fetch(`/api/matches?page=1&limit=5000`, {
                 headers: {
@@ -258,18 +274,29 @@ export default function AdminPage() {
                 const data = await res.json();
                 setAllMatchesForApps(data.matches ?? []);
             } else setAllMatchesForApps([]);
-        } catch { setAllMatchesForApps([]); }
+        } catch {
+            setAllMatchesForApps([]);
+        } finally {
+            setLoadingAllMatchesForApps(false);
+        }
     };
 
     // Get matches for a specific application (uses full list for profiller tab)
     const getMatchesForApp = (appId: string): Application[] => {
-        const source = activeTab === 'applications' && allMatchesForApps.length > 0 ? allMatchesForApps : matches;
+        const source = activeTab === 'applications' ? uniqueMatchesForApplications : uniqueMatchesForCurrentPage;
         const matchedApps: Application[] = [];
+        const seen = new Set<string>();
         source.forEach(m => {
             if (m.application_1_id === appId && m.application_2) {
-                matchedApps.push(m.application_2);
+                if (!seen.has(m.application_2.id)) {
+                    seen.add(m.application_2.id);
+                    matchedApps.push(m.application_2);
+                }
             } else if (m.application_2_id === appId && m.application_1) {
-                matchedApps.push(m.application_1);
+                if (!seen.has(m.application_1.id)) {
+                    seen.add(m.application_1.id);
+                    matchedApps.push(m.application_1);
+                }
             }
         });
         return matchedApps;
@@ -639,6 +666,7 @@ export default function AdminPage() {
         setPassword('');
         setApplications([]);
         setMatches([]);
+        setAllMatchesForApps([]);
         localStorage.removeItem('adminPassword');
         localStorage.removeItem('adminUcpName');
     };
@@ -667,10 +695,17 @@ export default function AdminPage() {
 
     const ACTIVE_THRESHOLD_MS = 2 * 60 * 60 * 1000; // 2 saat
 
+    const uniqueMatchesForCurrentPage = useMemo(() => dedupeMatchesByPair(matches), [matches]);
+
+    const uniqueMatchesForApplications = useMemo(
+        () => dedupeMatchesByPair(allMatchesForApps),
+        [allMatchesForApps]
+    );
+
     // Match count per application (profiller tab icin full list kullan)
     const matchCountMap = useMemo(() => {
         const map: Record<string, number> = {};
-        const source = activeTab === 'applications' && allMatchesForApps.length > 0 ? allMatchesForApps : matches;
+        const source = activeTab === 'applications' ? uniqueMatchesForApplications : uniqueMatchesForCurrentPage;
         source.forEach(m => {
             const id1 = m.application_1_id;
             const id2 = m.application_2_id;
@@ -678,7 +713,7 @@ export default function AdminPage() {
             map[id2] = (map[id2] || 0) + 1;
         });
         return map;
-    }, [matches, allMatchesForApps, activeTab]);
+    }, [uniqueMatchesForCurrentPage, uniqueMatchesForApplications, activeTab]);
 
     // Filtered and sorted applications
     const filteredApplications = useMemo(() => {
@@ -1301,7 +1336,15 @@ export default function AdminPage() {
                                                     </div>
 
                                                     {/* Current Matches for this person */}
-                                                    {appMatches.length > 0 && (
+                                                    {loadingAllMatchesForApps && (
+                                                        <div className="mt-4 pt-4 border-t border-white/10">
+                                                            <span className="text-[var(--matchup-text-muted)] text-sm">
+                                                                <i className="fa-solid fa-heart mr-1"></i>
+                                                                Eşleşmeler yükleniyor...
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                    {!loadingAllMatchesForApps && appMatches.length > 0 && (
                                                         <div className="mt-4 pt-4 border-t border-white/10">
                                                             <span className="text-[var(--matchup-text-muted)] text-sm block mb-2">
                                                                 <i className="fa-solid fa-heart mr-1"></i>
@@ -1345,7 +1388,7 @@ export default function AdminPage() {
                             </div>
                         ) : (
                             <>
-                            {matches.map((match, index) => (
+                            {uniqueMatchesForCurrentPage.map((match, index) => (
                                 <div
                                     key={match.id}
                                     className="card animate-fade-in"
