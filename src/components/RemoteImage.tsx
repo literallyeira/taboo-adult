@@ -19,7 +19,6 @@ export function RemoteImage({ src, alt, onError, unoptimized, ...props }: Remote
     return baseCandidates;
   }, [isImgur, src]);
   const [candidateIndices, setCandidateIndices] = useState<Record<string, number>>({});
-  const [hasError, setHasError] = useState(false);
   const candidateIndex = candidateIndices[src] || 0;
 
   const currentSrc = candidates[candidateIndex] || src;
@@ -28,20 +27,10 @@ export function RemoteImage({ src, alt, onError, unoptimized, ...props }: Remote
   const handleError = (event: React.SyntheticEvent<HTMLImageElement, Event>) => {
     if (candidateIndex < candidates.length - 1) {
       setCandidateIndices((prev) => ({ ...prev, [src]: candidateIndex + 1 }));
-      setHasError(false);
       return;
     }
-    setHasError(true);
     onError?.(event);
   };
-
-  if (hasError && candidateIndex >= candidates.length - 1) {
-    return (
-      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[var(--matchup-primary)] to-purple-600">
-        <i className="fa-solid fa-image text-white/30 text-2xl" />
-      </div>
-    );
-  }
 
   return (
     <Image
@@ -51,7 +40,6 @@ export function RemoteImage({ src, alt, onError, unoptimized, ...props }: Remote
       unoptimized={shouldBypassOptimizer}
       referrerPolicy={shouldBypassOptimizer ? 'no-referrer' : undefined}
       onError={handleError}
-      onLoad={() => setHasError(false)}
     />
   );
 }
