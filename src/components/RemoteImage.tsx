@@ -2,19 +2,23 @@
 
 import { useMemo, useState } from 'react';
 import Image, { type ImageProps } from 'next/image';
-import { getImageCandidates, isImgurUrl } from '@/lib/images';
+import { getImageCandidates, getImgurProxyUrl, isImgurUrl } from '@/lib/images';
 
 type RemoteImageProps = Omit<ImageProps, 'src'> & {
   src: string;
 };
 
 export function RemoteImage({ src, alt, onError, unoptimized, ...props }: RemoteImageProps) {
-  const candidates = useMemo(() => getImageCandidates(src), [src]);
+  const isImgur = isImgurUrl(src);
+  const candidates = useMemo(
+    () => (isImgur ? [getImgurProxyUrl(src)] : getImageCandidates(src)),
+    [isImgur, src]
+  );
   const [candidateIndices, setCandidateIndices] = useState<Record<string, number>>({});
   const candidateIndex = candidateIndices[src] || 0;
 
   const currentSrc = candidates[candidateIndex] || src;
-  const shouldBypassOptimizer = unoptimized ?? isImgurUrl(currentSrc);
+  const shouldBypassOptimizer = unoptimized ?? isImgur || currentSrc.startsWith('/api/image-proxy');
 
   return (
     <Image

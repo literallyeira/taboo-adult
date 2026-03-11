@@ -24,6 +24,10 @@ export function isImgurUrl(url: string | null | undefined): boolean {
   }
 }
 
+export function isImgurHost(hostname: string): boolean {
+  return IMGUR_PAGE_HOSTS.has(hostname) || IMGUR_IMAGE_HOSTS.has(hostname);
+}
+
 export function getImageCandidates(url: string | null | undefined): string[] {
   if (!url?.trim()) return [];
 
@@ -66,5 +70,9 @@ export function getImageCandidates(url: string | null | undefined): string[] {
 export function getPreferredImageUrl(url: string | null | undefined): string {
   const candidates = getImageCandidates(url);
   return candidates.find((candidate) => candidate.includes('i.imgur.com')) || candidates[0] || '';
+}
+
+export function getImgurProxyUrl(url: string): string {
+  return `/api/image-proxy?url=${encodeURIComponent(url)}`;
 }
 
