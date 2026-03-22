@@ -241,7 +241,9 @@ export default function ReklamPage() {
                       <img
                         src={imageUrl}
                         alt="Reklam önizleme"
-                        className="w-full h-auto object-cover"
+                        width={160}
+                        height={600}
+                        className="block w-full max-w-[160px] h-auto object-contain object-top"
                         onError={() => setPreviewError(true)}
                       />
                     ) : (

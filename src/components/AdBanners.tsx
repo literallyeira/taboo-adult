@@ -12,31 +12,42 @@ interface Ad {
   expires_at: string;
 }
 
+/** IAB skyscraper 160×600 — tam görünsün diye object-contain; kısa ekranda orantılı küçülür */
+const AD_WIDTH = 160;
+const AD_MAX_H = 600;
+
 function AdSlot({ ad, side }: { ad: Ad | null; side: 'left' | 'right' }) {
-  // Banner'ı, ana içerik (yaklaşık 700px) ile ekran kenarı arasındaki boşluğun ortasına konumla
+  // Banner'ı, ana içerik (yaklaşık 700px) ile ekran kenarı arasındaki boşluğun ortasına konumla (160px genişlik için)
   const positionStyle = {
-    [side]: 'calc((100vw - 700px) / 4 - 130px)',
+    [side]: `calc((100vw - 700px) / 4 - ${AD_WIDTH / 2}px)`,
   };
+
+  const frameClass =
+    'rounded-2xl overflow-hidden border border-white/10 shadow-lg shadow-black/50';
 
   if (ad) {
     return (
       <div
-        className="fixed top-0 z-40 hidden xl:flex items-center h-screen"
+        className="fixed top-0 z-40 hidden xl:flex items-center justify-center h-screen py-4 pointer-events-none"
         style={positionStyle}
       >
         <a
           href={ad.link_url}
           target="_blank"
           rel="noopener noreferrer"
-          className="block group"
+          className="block group pointer-events-auto"
         >
-          <div className="relative w-[260px]">
-            <div className="rounded-2xl overflow-hidden border border-white/10 shadow-lg shadow-black/50 transition-all duration-300 group-hover:border-pink-500/30 group-hover:shadow-pink-500/10">
+          <div className="relative w-[160px] shrink-0 flex justify-center">
+            <div
+              className={`${frameClass} transition-all duration-300 group-hover:border-pink-500/30 group-hover:shadow-pink-500/10 bg-black/20 w-full`}
+            >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={ad.image_url}
                 alt="Reklam"
-                className="w-full h-[500px] object-cover"
+                width={AD_WIDTH}
+                height={AD_MAX_H}
+                className="block h-auto w-auto max-w-[160px] max-h-[min(600px,calc(100vh-3rem))] object-contain object-top mx-auto"
                 loading="lazy"
               />
             </div>
@@ -49,15 +60,17 @@ function AdSlot({ ad, side }: { ad: Ad | null; side: 'left' | 'right' }) {
     );
   }
 
-  // Boş alan - placeholder
+  // Boş alan - placeholder (aynı 160×600 oranı)
   return (
     <div
-      className="fixed top-0 z-40 hidden xl:flex items-center h-screen"
+      className="fixed top-0 z-40 hidden xl:flex items-center justify-center h-screen py-4 pointer-events-none"
       style={positionStyle}
     >
-      <Link href="/reklam" className="block group">
-        <div className="relative w-[260px]">
-          <div className="rounded-2xl border border-dashed border-white/10 h-[500px] flex flex-col items-center justify-center gap-3 transition-all duration-300 group-hover:border-pink-500/30 group-hover:bg-pink-500/5 cursor-pointer">
+      <Link href="/reklam" className="block group pointer-events-auto">
+        <div className="relative w-[160px] shrink-0">
+          <div
+            className={`${frameClass} border-dashed h-[min(600px,calc(100vh-3rem))] min-h-[280px] flex flex-col items-center justify-center gap-3 transition-all duration-300 group-hover:border-pink-500/30 group-hover:bg-pink-500/5 cursor-pointer`}
+          >
             <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-pink-500/10 transition-all">
               <i className="fa-solid fa-rectangle-ad text-xl text-gray-600 group-hover:text-pink-400 transition-colors"></i>
             </div>
