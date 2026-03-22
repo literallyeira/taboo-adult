@@ -212,7 +212,7 @@ export default function ReklamPage() {
               placeholder="https://example.com/reklam-banner.png"
               className="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl text-white placeholder-gray-600 focus:outline-none focus:border-pink-500/50 text-sm"
             />
-            <p className="text-[11px] text-gray-600 mt-1">Önerilen boyut: 160x600px veya 160x300px (PNG/JPG)</p>
+            <p className="text-[11px] text-gray-600 mt-1">Önerilen boyut: 280×600px (veya 280×300; PNG/JPG)</p>
           </div>
 
           {/* Link URL */}
@@ -234,16 +234,16 @@ export default function ReklamPage() {
             <div>
               <label className="block text-sm text-gray-400 mb-2">Önizleme</label>
               <div className="flex justify-center">
-                <div className="relative w-[160px]">
+                <div className="relative w-[280px] max-w-full">
                   <div className="rounded-2xl overflow-hidden border border-white/10 shadow-lg shadow-black/50 bg-black/20">
                     {!previewError ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={imageUrl}
                         alt="Reklam önizleme"
-                        width={160}
+                        width={280}
                         height={600}
-                        className="block w-full max-w-[160px] h-auto object-contain object-top"
+                        className="block w-full max-w-[280px] h-auto object-contain object-top"
                         onError={() => setPreviewError(true)}
                       />
                     ) : (

@@ -12,12 +12,12 @@ interface Ad {
   expires_at: string;
 }
 
-/** IAB skyscraper 160×600 — tam görünsün diye object-contain; kısa ekranda orantılı küçülür */
-const AD_WIDTH = 160;
+/** Yan reklam alanı 280×600 — tam görünsün diye object-contain; kısa ekranda orantılı küçülür */
+const AD_WIDTH = 280;
 const AD_MAX_H = 600;
 
 function AdSlot({ ad, side }: { ad: Ad | null; side: 'left' | 'right' }) {
-  // Banner'ı, ana içerik (yaklaşık 700px) ile ekran kenarı arasındaki boşluğun ortasına konumla (160px genişlik için)
+  // Banner'ı, ana içerik (yaklaşık 700px) ile ekran kenarı arasındaki boşluğun ortasına konumla
   const positionStyle = {
     [side]: `calc((100vw - 700px) / 4 - ${AD_WIDTH / 2}px)`,
   };
@@ -37,7 +37,7 @@ function AdSlot({ ad, side }: { ad: Ad | null; side: 'left' | 'right' }) {
           rel="noopener noreferrer"
           className="block group pointer-events-auto"
         >
-          <div className="relative w-[160px] shrink-0 flex justify-center">
+          <div className="relative w-[280px] shrink-0 flex justify-center">
             <div
               className={`${frameClass} transition-all duration-300 group-hover:border-pink-500/30 group-hover:shadow-pink-500/10 bg-black/20 w-full`}
             >
@@ -47,7 +47,7 @@ function AdSlot({ ad, side }: { ad: Ad | null; side: 'left' | 'right' }) {
                 alt="Reklam"
                 width={AD_WIDTH}
                 height={AD_MAX_H}
-                className="block h-auto w-auto max-w-[160px] max-h-[min(600px,calc(100vh-3rem))] object-contain object-top mx-auto"
+                className="block h-auto w-auto max-w-[280px] max-h-[min(600px,calc(100vh-3rem))] object-contain object-top mx-auto"
                 loading="lazy"
               />
             </div>
@@ -60,14 +60,14 @@ function AdSlot({ ad, side }: { ad: Ad | null; side: 'left' | 'right' }) {
     );
   }
 
-  // Boş alan - placeholder (aynı 160×600 oranı)
+  // Boş alan - placeholder (aynı yükseklik)
   return (
     <div
       className="fixed top-0 z-40 hidden xl:flex items-center justify-center h-screen py-4 pointer-events-none"
       style={positionStyle}
     >
       <Link href="/reklam" className="block group pointer-events-auto">
-        <div className="relative w-[160px] shrink-0">
+        <div className="relative w-[280px] shrink-0">
           <div
             className={`${frameClass} border-dashed h-[min(600px,calc(100vh-3rem))] min-h-[280px] flex flex-col items-center justify-center gap-3 transition-all duration-300 group-hover:border-pink-500/30 group-hover:bg-pink-500/5 cursor-pointer`}
           >
