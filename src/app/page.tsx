@@ -12,6 +12,8 @@ import { isCompatible } from '@/lib/compatibility';
 import { getProfileCompleteness } from '@/lib/profile-completeness';
 import { PhotoSlider } from '@/components/PhotoSlider';
 import { getStoredRef, clearStoredRef } from '@/components/RefTracker';
+import { RemoteImage } from '@/components/RemoteImage';
+import { WeeklyHighlights } from '@/components/WeeklyHighlights';
 
 interface Character {
   id: number;
@@ -639,29 +641,34 @@ function HomeContent() {
   if (!effectiveSession) {
     return (
       <main className="flex items-center justify-center px-4 py-20">
-        <div className="card max-w-md w-full text-center animate-fade-in">
-          <Link href="/" className="inline-block hover:opacity-90 transition-opacity">
-            <Image src="/matchup_logo.png" alt="MatchUp" width={220} height={60} className="mx-auto mb-6" priority />
-          </Link>
-          <p className="text-[var(--matchup-text-muted)] text-lg mb-8">
-            <i className="fa-solid fa-heart text-[var(--matchup-primary)] mr-2" />
-            Hayatının aşkını bulmaya bir adım kaldı!
-          </p>
-          {testMode ? (
-            <button onClick={() => setTestModeLoggedIn(true)} className="btn-primary flex items-center justify-center gap-3">
-              <i className="fa-solid fa-flask" /> Test Kullanıcısı Olarak Giriş Yap
-            </button>
-          ) : (
-            <button onClick={() => signIn('gtaw')} className="btn-primary flex items-center justify-center gap-3">
-              <i className="fa-solid fa-right-to-bracket" /> GTA World ile Giriş Yap
-            </button>
-          )}
-          <p className="text-[var(--matchup-text-muted)] text-sm mt-6">Giriş yaparak gizlilik politikamızı kabul etmiş olursunuz.</p>
-          {testMode && (
-            <div className="mt-6 p-3 bg-yellow-500/20 rounded-xl border border-yellow-500/50">
-              <p className="text-yellow-400 text-sm"><i className="fa-solid fa-flask mr-2" /> Test Modu Aktif</p>
-            </div>
-          )}
+        <div className="max-w-5xl w-full">
+          <div className="card max-w-md w-full text-center animate-fade-in mx-auto">
+            <Link href="/" className="inline-block hover:opacity-90 transition-opacity">
+              <Image src="/matchup_logo.png" alt="MatchUp" width={220} height={60} className="mx-auto mb-6" priority />
+            </Link>
+            <p className="text-[var(--matchup-text-muted)] text-lg mb-8">
+              <i className="fa-solid fa-heart text-[var(--matchup-primary)] mr-2" />
+              Hayatının aşkını bulmaya bir adım kaldı!
+            </p>
+            {testMode ? (
+              <button onClick={() => setTestModeLoggedIn(true)} className="btn-primary flex items-center justify-center gap-3">
+                <i className="fa-solid fa-flask" /> Test Kullanıcısı Olarak Giriş Yap
+              </button>
+            ) : (
+              <button onClick={() => signIn('gtaw')} className="btn-primary flex items-center justify-center gap-3">
+                <i className="fa-solid fa-right-to-bracket" /> GTA World ile Giriş Yap
+              </button>
+            )}
+            <p className="text-[var(--matchup-text-muted)] text-sm mt-6">Giriş yaparak gizlilik politikamızı kabul etmiş olursunuz.</p>
+            {testMode && (
+              <div className="mt-6 p-3 bg-yellow-500/20 rounded-xl border border-yellow-500/50">
+                <p className="text-yellow-400 text-sm"><i className="fa-solid fa-flask mr-2" /> Test Modu Aktif</p>
+              </div>
+            )}
+          </div>
+          <div className="mt-8">
+            <WeeklyHighlights maxItems={5} />
+          </div>
         </div>
       </main>
     );
@@ -1006,6 +1013,8 @@ function HomeContent() {
 
         {activeTab === 'discover' && (
           <div className="min-h-[500px] flex flex-col items-center justify-center">
+            <WeeklyHighlights />
+
             {/* Günün Profili - eşleşmiş kişileri gösterme */}
             {spotlight && userApplication && isCompatible(userApplication.gender, userApplication.sexual_preference, spotlight.gender, spotlight.sexual_preference) && !isLoadingPossible && currentCard && spotlight.id !== currentCard.id && !matches.some(m => m.matchedWith.id === spotlight.id) && (
               <div className="w-full mb-4 animate-fade-in">
@@ -1016,7 +1025,7 @@ function HomeContent() {
                 <div className="relative rounded-2xl overflow-hidden border border-orange-500/20 shadow-lg shadow-orange-500/5">
                   <div className="flex items-center gap-3 p-3 bg-white/5">
                     {spotlight.photo_url && (
-                      <Image src={spotlight.photo_url} alt="" width={48} height={48} className="w-12 h-12 rounded-full object-cover border-2 border-orange-400/50" />
+                      <RemoteImage src={spotlight.photo_url} alt="" width={48} height={48} className="w-12 h-12 rounded-full object-cover border-2 border-orange-400/50" />
                     )}
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-sm truncate">{spotlight.first_name} {spotlight.last_name}</p>
@@ -1205,7 +1214,7 @@ function HomeContent() {
                     >
                       <div className="relative aspect-[3/4] w-full">
                         {match.matchedWith.photo_url ? (
-                          <Image src={match.matchedWith.photo_url} alt="" fill className="object-cover object-top" sizes="(max-width: 640px) 50vw, 33vw" />
+                          <RemoteImage src={match.matchedWith.photo_url} alt="" fill className="object-cover object-top" sizes="(max-width: 640px) 50vw, 33vw" />
                         ) : (
                           <div className="w-full h-full bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center">
                             <i className="fa-solid fa-user text-3xl text-white/40" />
