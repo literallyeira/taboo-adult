@@ -13,8 +13,8 @@ interface Character {
 }
 
 const PRODUCTS = [
-  { id: 'plus' as const, name: 'MatchUp+', price: 5000, desc: '1 haftalık. Günlük 50 like/dislike hakkı (normal 25). 24 saatte bir yenilenir.' },
-  { id: 'pro' as const, name: 'MatchUp Pro', price: 15000, desc: '1 haftalık. Sınırsız like/dislike. Seni beğenenleri görebilirsin.' },
+  { id: 'plus' as const, name: 'MatchUp+', price: 5000, desc: '1 haftalık. Günlük 30 like/dislike hakkı (normal 20). 24 saatte bir yenilenir.' },
+  { id: 'pro' as const, name: 'MatchUp Pro', price: 15000, desc: '1 haftalık. Günlük 50 like/dislike hakkı. Seni beğenenleri görebilirsin.' },
   { id: 'boost' as const, name: 'Beni Öne Çıkart', price: 5000, desc: '24 saat boyunca uyumlu herkeste ilk 10\'da görünürsün.' },
 ];
 
