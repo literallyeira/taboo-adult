@@ -38,11 +38,16 @@ export async function GET(request: Request) {
 
     // 5 bağımsız sorguyu paralel çalıştır (blocked dahil)
     const tenHoursAgo = new Date(Date.now() - 10 * 60 * 60 * 1000).toISOString();
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
     const [likesRes, dislikesRes, matchesRes, boostsRes, blockedRes] = await Promise.all([
       supabase.from('likes').select('to_application_id').eq('from_application_id', myApplication.id),
       supabase.from('dislikes').select('to_application_id').eq('from_application_id', myApplication.id).gt('created_at', tenHoursAgo),
-      supabase.from('matches').select('application_1_id, application_2_id').or(`application_1_id.eq.${myApplication.id},application_2_id.eq.${myApplication.id}`),
+      supabase
+        .from('matches')
+        .select('application_1_id, application_2_id')
+        .or(`application_1_id.eq.${myApplication.id},application_2_id.eq.${myApplication.id}`)
+        .gt('created_at', sevenDaysAgo),
       supabase.from('boosts').select('application_id').gt('expires_at', new Date().toISOString()),
       supabase.from('blocked_users').select('blocked_application_id').eq('blocker_application_id', myApplication.id),
     ]);
@@ -152,7 +157,11 @@ export async function GET(request: Request) {
         ? supabase.from('likes').select('to_application_id').in('to_application_id', candidateIds)
         : { data: [] },
       candidateIds.length > 0
-        ? supabase.from('matches').select('application_1_id, application_2_id').or(`application_1_id.in.(${candidateIds.join(',')}),application_2_id.in.(${candidateIds.join(',')})`)
+        ? supabase
+            .from('matches')
+            .select('application_1_id, application_2_id')
+            .or(`application_1_id.in.(${candidateIds.join(',')}),application_2_id.in.(${candidateIds.join(',')})`)
+            .gt('created_at', sevenDaysAgo)
         : { data: [] },
     ]);
 
