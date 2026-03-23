@@ -40,6 +40,7 @@ export default function AdminPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
+    const [selectedGallery, setSelectedGallery] = useState<{ images: string[]; index: number; title: string } | null>(null);
     const [activeTab, setActiveTab] = useState<'stats' | 'applications' | 'matches' | 'subscriptions' | 'payments' | 'ads' | 'discount-codes' | 'referrals' | 'bug-reports' | 'job-applications' | 'partners'>('stats');
     const [subModal, setSubModal] = useState<{ appId: string; name: string; currentTier: string } | null>(null);
     const [subTier, setSubTier] = useState('free');
@@ -1375,6 +1376,44 @@ export default function AdminPage() {
                                                         <p className="text-sm leading-relaxed">{app.description}</p>
                                                     </div>
 
+                                                    {Array.isArray(app.extra_photos) && app.extra_photos.filter(Boolean).length > 0 && (
+                                                        <div className="mt-4">
+                                                            <div className="flex items-center justify-between mb-2">
+                                                                <span className="text-[var(--matchup-text-muted)] text-sm">
+                                                                    Diğer Fotoğraflar ({app.extra_photos.filter(Boolean).length})
+                                                                </span>
+                                                                <button
+                                                                    type="button"
+                                                                    className="text-xs px-2 py-1 rounded-md border border-[var(--matchup-border)] hover:border-[var(--matchup-primary)] hover:text-[var(--matchup-primary)] transition-colors"
+                                                                    onClick={() => setSelectedGallery({
+                                                                        images: app.extra_photos!.filter(Boolean),
+                                                                        index: 0,
+                                                                        title: `${app.first_name} ${app.last_name}`,
+                                                                    })}
+                                                                >
+                                                                    Tümünü Aç
+                                                                </button>
+                                                            </div>
+                                                            <div className="flex gap-2 overflow-x-auto pb-1">
+                                                                {app.extra_photos.filter(Boolean).map((photo, pidx) => (
+                                                                    <button
+                                                                        key={`${app.id}-extra-${pidx}`}
+                                                                        type="button"
+                                                                        className="w-20 h-20 rounded-lg overflow-hidden border border-[var(--matchup-border)] hover:border-[var(--matchup-primary)] transition-colors flex-shrink-0"
+                                                                        onClick={() => setSelectedGallery({
+                                                                            images: app.extra_photos!.filter(Boolean),
+                                                                            index: pidx,
+                                                                            title: `${app.first_name} ${app.last_name}`,
+                                                                        })}
+                                                                    >
+                                                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                                        <img src={photo} alt={`Ek foto ${pidx + 1}`} className="w-full h-full object-cover" />
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+
                                                     {/* Current Matches for this person */}
                                                     {loadingAllMatchesForApps && (
                                                         <div className="mt-4 pt-4 border-t border-white/10">
@@ -2212,6 +2251,87 @@ export default function AdminPage() {
                     >
                         ×
                     </button>
+                </div>
+            )}
+
+            {/* Extra Photos Gallery Modal */}
+            {selectedGallery && (
+                <div
+                    className="fixed inset-0 bg-black/85 flex items-center justify-center z-50 p-4"
+                    onClick={() => setSelectedGallery(null)}
+                >
+                    <div className="w-full max-w-4xl" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-between mb-3 text-white">
+                            <p className="text-sm opacity-90">
+                                {selectedGallery.title} - Foto {selectedGallery.index + 1}/{selectedGallery.images.length}
+                            </p>
+                            <button
+                                type="button"
+                                className="text-2xl hover:text-[var(--matchup-primary)]"
+                                onClick={() => setSelectedGallery(null)}
+                            >
+                                ×
+                            </button>
+                        </div>
+
+                        <div className="relative rounded-xl overflow-hidden bg-black/50 border border-white/10">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                                src={selectedGallery.images[selectedGallery.index]}
+                                alt="Ek foto"
+                                className="w-full max-h-[75vh] object-contain"
+                            />
+
+                            {selectedGallery.images.length > 1 && (
+                                <>
+                                    <button
+                                        type="button"
+                                        className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/60 text-white hover:bg-black/80"
+                                        onClick={() =>
+                                            setSelectedGallery((prev) =>
+                                                prev
+                                                    ? { ...prev, index: (prev.index - 1 + prev.images.length) % prev.images.length }
+                                                    : prev
+                                            )
+                                        }
+                                    >
+                                        <i className="fa-solid fa-chevron-left" />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/60 text-white hover:bg-black/80"
+                                        onClick={() =>
+                                            setSelectedGallery((prev) =>
+                                                prev
+                                                    ? { ...prev, index: (prev.index + 1) % prev.images.length }
+                                                    : prev
+                                            )
+                                        }
+                                    >
+                                        <i className="fa-solid fa-chevron-right" />
+                                    </button>
+                                </>
+                            )}
+                        </div>
+
+                        {selectedGallery.images.length > 1 && (
+                            <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+                                {selectedGallery.images.map((photo, idx) => (
+                                    <button
+                                        key={`gallery-thumb-${idx}`}
+                                        type="button"
+                                        className={`w-16 h-16 rounded-md overflow-hidden border flex-shrink-0 ${
+                                            idx === selectedGallery.index ? 'border-[var(--matchup-primary)]' : 'border-white/20'
+                                        }`}
+                                        onClick={() => setSelectedGallery((prev) => (prev ? { ...prev, index: idx } : prev))}
+                                    >
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img src={photo} alt={`Küçük önizleme ${idx + 1}`} className="w-full h-full object-cover" />
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
             )}
         </main>
