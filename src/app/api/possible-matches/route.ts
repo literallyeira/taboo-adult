@@ -38,6 +38,7 @@ export async function GET(request: Request) {
 
     // 5 bağımsız sorguyu paralel çalıştır (blocked dahil)
     const tenHoursAgo = new Date(Date.now() - 10 * 60 * 60 * 1000).toISOString();
+    const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
     const [likesRes, dislikesRes, matchesRes, boostsRes, blockedRes] = await Promise.all([
       supabase.from('likes').select('to_application_id').eq('from_application_id', myApplication.id),
       supabase.from('dislikes').select('to_application_id').eq('from_application_id', myApplication.id).gt('created_at', tenHoursAgo),
@@ -84,6 +85,7 @@ export async function GET(request: Request) {
         .select('*')
         .not('gender', 'is', null)
         .not('sexual_preference', 'is', null)
+        .gte('last_active_at', threeDaysAgo)
         .or(genderFilters.join(','))
         .limit(fetchLimit);
 
