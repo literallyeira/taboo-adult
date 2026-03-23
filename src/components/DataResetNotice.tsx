@@ -22,7 +22,7 @@ export default function DataResetNotice() {
         <div className="flex items-start gap-3">
           <i className="fa-solid fa-triangle-exclamation mt-0.5 text-yellow-300" />
           <p className="text-xs sm:text-sm leading-relaxed">
-            Ozur dileriz. Eslesme hatasi nedeniyle verilerimiz sifirlanmistir (like/dislike/eslesme).
+            Özür dileriz. Veri tabanında yaşanan hata nedeniyle geçmişe dair eşleşme verileriniz sıfırlandı.
           </p>
           <button
             type="button"
