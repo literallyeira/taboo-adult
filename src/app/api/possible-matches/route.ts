@@ -95,8 +95,11 @@ export async function GET(request: Request) {
     };
 
     const strictExcludeIds = excludeIds;
-    const relaxedExcludeIds = [...new Set([myApplication.id, ...matchedIds, ...blockedIds])];
-    const minimalExcludeIds = [...new Set([myApplication.id, ...blockedIds])];
+    // Like/Dislike atan profil tekrar gelmesin (refresh'te geri dönme bug fix)
+    const alwaysExcludeIds = [...new Set([myApplication.id, ...likedIds, ...dislikedIds, ...blockedIds])];
+    // Kademeli gevşetmede yalnızca eski match geçmişini serbest bırakıyoruz
+    const relaxedExcludeIds = alwaysExcludeIds;
+    const minimalExcludeIds = alwaysExcludeIds;
 
     const mergedById = new Map<string, Application>();
     const addBatch = (rows: Application[]) => {

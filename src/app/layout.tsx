@@ -8,6 +8,7 @@ import AdBanners from "@/components/AdBanners";
 import PartnersSection from "@/components/PartnersSection";
 import PartnersAnnouncementBar from "@/components/PartnersAnnouncementBar";
 import { MatchNotificationsBell } from "@/components/MatchNotificationsBell";
+import DataResetNotice from "@/components/DataResetNotice";
 const inter = Inter({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
@@ -50,6 +51,7 @@ export default function RootLayout({
         `}</Script>
         <Providers>
           <PartnersAnnouncementBar />
+          <DataResetNotice />
           <AdBanners />
           <div className="flex-1 w-full">
             {children}
