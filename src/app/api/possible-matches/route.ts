@@ -75,32 +75,72 @@ export async function GET(request: Request) {
       }
     }
 
-    // Fazla ID varsa chunk'la (Supabase URL limiti), yoksa tek sorgu
-    const fetchSize = limit + 10;
-    let query = supabase
-      .from('applications')
-      .select('*')
-      .not('gender', 'is', null)
-      .not('sexual_preference', 'is', null)
-      .or(genderFilters.join(','))
-      .limit(fetchSize);
+    // Havuz çok daraldığında (hesap sil/aç veya yoğun swipe sonrası),
+    // sadece strict exclude ile sınırlı kalınca kullanıcı 1-2 profile kilitlenebiliyor.
+    // Bu yüzden kademeli fallback yapıyoruz.
+    const fetchCompatible = async (idsToExclude: string[], fetchLimit: number) => {
+      let q = supabase
+        .from('applications')
+        .select('*')
+        .not('gender', 'is', null)
+        .not('sexual_preference', 'is', null)
+        .or(genderFilters.join(','))
+        .limit(fetchLimit);
 
-    if (excludeIds.length > 0) {
-      query = query.not('id', 'in', `(${excludeIds.join(',')})`);
-    }
+      if (idsToExclude.length > 0) {
+        q = q.not('id', 'in', `(${idsToExclude.join(',')})`);
+      }
 
-    const { data: candidates, error: fetchError } = await query;
+      return q;
+    };
 
-    if (fetchError) {
+    const strictExcludeIds = excludeIds;
+    const relaxedExcludeIds = [...new Set([myApplication.id, ...matchedIds, ...blockedIds])];
+    const minimalExcludeIds = [...new Set([myApplication.id, ...blockedIds])];
+
+    const mergedById = new Map<string, Application>();
+    const addBatch = (rows: Application[]) => {
+      for (const row of rows) {
+        if (!mergedById.has(row.id)) mergedById.set(row.id, row);
+      }
+    };
+
+    const fetchSize = Math.min(limit + 30, 100);
+    const { data: strictRows, error: strictErr } = await fetchCompatible(strictExcludeIds, fetchSize);
+    if (strictErr) {
       return NextResponse.json({ error: 'Başvurular alınamadı' }, { status: 500 });
     }
+    addBatch((strictRows ?? []) as Application[]);
 
-    const apps = (candidates ?? []) as Application[];
+    if (mergedById.size < limit) {
+      const { data: relaxedRows, error: relaxedErr } = await fetchCompatible(
+        [...new Set([...relaxedExcludeIds, ...Array.from(mergedById.keys())])],
+        fetchSize
+      );
+      if (relaxedErr) {
+        return NextResponse.json({ error: 'Başvurular alınamadı' }, { status: 500 });
+      }
+      addBatch((relaxedRows ?? []) as Application[]);
+    }
+
+    if (mergedById.size < limit) {
+      const { data: minimalRows, error: minimalErr } = await fetchCompatible(
+        [...new Set([...minimalExcludeIds, ...Array.from(mergedById.keys())])],
+        fetchSize
+      );
+      if (minimalErr) {
+        return NextResponse.json({ error: 'Başvurular alınamadı' }, { status: 500 });
+      }
+      addBatch((minimalRows ?? []) as Application[]);
+    }
+
+    const apps = Array.from(mergedById.values());
 
     const boostedFirst = apps.filter((a) => boostedIds.has(a.id));
     const rest = apps.filter((a) => !boostedIds.has(a.id));
     rest.sort((a, b) => getProfileCompleteness(b) - getProfileCompleteness(a));
-    const candidateIds = [...boostedFirst.slice(0, 10), ...rest].slice(0, limit).map((a) => a.id);
+    const ranked = [...boostedFirst.slice(0, 10), ...rest];
+    const candidateIds = ranked.slice(0, limit).map((a) => a.id);
 
     const [likesToCount, matchesCount] = await Promise.all([
       candidateIds.length > 0
@@ -125,7 +165,7 @@ export async function GET(request: Request) {
       const { gtaw_user_id: _, character_id: __, ...safe } = app;
       return safe;
     };
-    const possible = [...boostedFirst.slice(0, 10), ...rest].slice(0, limit).map((a) => ({
+    const possible = ranked.slice(0, limit).map((a) => ({
       ...stripSensitive(a),
       liked_count: likedCountMap[a.id] || 0,
       match_count: matchCountMap[a.id] || 0,
