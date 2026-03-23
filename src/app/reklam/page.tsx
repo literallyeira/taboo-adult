@@ -224,7 +224,7 @@ export default function ReklamPage() {
               type="url"
               value={linkUrl}
               onChange={(e) => setLinkUrl(e.target.value)}
-              placeholder="https://facebrowser-tr.gta.world/profilim"
+              placeholder="https://face-tr.gta.world/profile/kullaniciadi"
               className="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl text-white placeholder-gray-600 focus:outline-none focus:border-pink-500/50 text-sm"
             />
           </div>

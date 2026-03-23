@@ -91,7 +91,7 @@ export default function RootLayout({
                       <i className="fa-brands fa-discord text-lg"></i>
                       <span>Discord</span>
                     </a>
-                    <a href="https://facebrowser-tr.gta.world" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-gray-500 hover:text-pink-500 transition-colors">
+                    <a href="https://face-tr.gta.world/profile/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-gray-500 hover:text-pink-500 transition-colors">
                       <i className="fa-solid fa-globe text-lg"></i>
                       <span>Facebrowser</span>
                     </a>
