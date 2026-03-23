@@ -1,7 +1,8 @@
 import { supabase } from './supabase';
 
-const FREE_DAILY_LIMIT = 25;
-const PLUS_DAILY_LIMIT = 50;
+const FREE_DAILY_LIMIT = 20;
+const PLUS_DAILY_LIMIT = 30;
+const PRO_DAILY_LIMIT = 50;
 const RESET_HOURS = 24;
 const FREE_UNDO_PER_DAY = 1;
 const PRO_UNDO_PER_DAY = 5;
@@ -75,9 +76,9 @@ export async function extendOrSetSubscription(
   );
 }
 
-/** Günlük limit: free 25, plus 50, pro sınırsız */
+/** Günlük like limiti: free 20, plus 30, pro 50 */
 function dailyLimitForTier(tier: Tier): number {
-  if (tier === 'pro') return 999999;
+  if (tier === 'pro') return PRO_DAILY_LIMIT;
   if (tier === 'plus') return PLUS_DAILY_LIMIT;
   return FREE_DAILY_LIMIT;
 }
@@ -224,7 +225,7 @@ export async function getLimitsInfo(applicationId: string): Promise<LimitsInfo> 
 
   return {
     tier,
-    dailyLimit: tier === 'pro' ? 999999 : dailyLimit,
+    dailyLimit,
     remaining,
     resetAt: resetAt.toISOString(),
     boostExpiresAt,
