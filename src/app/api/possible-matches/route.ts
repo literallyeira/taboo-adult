@@ -39,7 +39,6 @@ export async function GET(request: Request) {
     // 5 bağımsız sorguyu paralel çalıştır (blocked dahil)
     const tenHoursAgo = new Date(Date.now() - 10 * 60 * 60 * 1000).toISOString();
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-    const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
     const [likesRes, dislikesRes, matchesRes, boostsRes, blockedRes] = await Promise.all([
       supabase.from('likes').select('to_application_id').eq('from_application_id', myApplication.id),
       supabase.from('dislikes').select('to_application_id').eq('from_application_id', myApplication.id).gt('created_at', tenHoursAgo),
@@ -84,21 +83,32 @@ export async function GET(request: Request) {
     // Havuz çok daraldığında (hesap sil/aç veya yoğun swipe sonrası),
     // sadece strict exclude ile sınırlı kalınca kullanıcı 1-2 profile kilitlenebiliyor.
     // Bu yüzden kademeli fallback yapıyoruz.
+    // 3 günden eski aktiflik: DB'de sadece .gte kullanınca last_active_at NULL olan tüm profiller eleniyordu
+    // (çoğu kayıtta NULL) → havuz 2-3 kişiye düşüyordu. NULL = henüz takip edilmiyor, gösterilmeye devam.
+    const threeDaysMs = Date.now() - 3 * 24 * 60 * 60 * 1000;
+    const passesActiveWindow = (row: Application) => {
+      if (!row.last_active_at) return true;
+      return new Date(row.last_active_at).getTime() >= threeDaysMs;
+    };
+
     const fetchCompatible = async (idsToExclude: string[], fetchLimit: number) => {
+      const overFetch = Math.min(Math.max(fetchLimit * 5, 80), 400);
       let q = supabase
         .from('applications')
         .select('*')
         .not('gender', 'is', null)
         .not('sexual_preference', 'is', null)
-        .gte('last_active_at', threeDaysAgo)
         .or(genderFilters.join(','))
-        .limit(fetchLimit);
+        .limit(overFetch);
 
       if (idsToExclude.length > 0) {
         q = q.not('id', 'in', `(${idsToExclude.join(',')})`);
       }
 
-      return q;
+      const { data, error } = await q;
+      if (error) return { data: null, error };
+      const filtered = ((data ?? []) as Application[]).filter(passesActiveWindow).slice(0, fetchLimit);
+      return { data: filtered, error: null };
     };
 
     const strictExcludeIds = excludeIds;
