@@ -129,6 +129,7 @@ function HomeContent() {
   const [blockReportPending, setBlockReportPending] = useState<string | null>(null);
   const [seenMatchIds, setSeenMatchIds] = useState<Set<string>>(new Set());
   const [selectedMatchCard, setSelectedMatchCard] = useState<Match | null>(null);
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
 
   const [testMode, setTestMode] = useState(false);
   const [testModeLoggedIn, setTestModeLoggedIn] = useState(false);
@@ -339,21 +340,6 @@ function HomeContent() {
     });
   }, [activeTab, selectedCharacter?.id, testMode, matches]);
 
-  const backfillProfiles = useCallback(async () => {
-    if (!selectedCharacter || testMode) return;
-    try {
-      const res = await fetch(`/api/possible-matches?characterId=${selectedCharacter.id}&limit=20`);
-      const data = await res.json();
-      if (data.possibleMatches) {
-        setPossibleMatches(prev => {
-          const existingIds = new Set(prev.map(p => p.id));
-          const newOnes = (data.possibleMatches as Application[]).filter(p => !existingIds.has(p.id));
-          return [...prev, ...newOnes].slice(0, 20);
-        });
-      }
-    } catch { /* ignore */ }
-  }, [selectedCharacter, testMode]);
-
   const handleLike = async (profile: Application) => {
     if (!selectedCharacter || testMode) return;
     setActionPending(profile.id);
@@ -365,11 +351,8 @@ function HomeContent() {
       });
       const data = await res.json();
       if (res.ok) {
-        setPossibleMatches((prev) => {
-          const next = prev.filter((p) => p.id !== profile.id);
-          if (next.length < 15) backfillProfiles();
-          return next;
-        });
+        setPossibleMatches((prev) => prev.filter((p) => p.id !== profile.id));
+        setCurrentPhotoIndex(0);
         if (data.remaining !== undefined && limits) setLimits((l) => l ? { ...l, remaining: data.remaining, resetAt: data.resetAt || l.resetAt } : null);
         if (data.isMatch) {
           setShowMatchModal(profile);
@@ -399,11 +382,8 @@ function HomeContent() {
       const data = res.ok ? await res.json() : {};
       if (res.ok) {
         setLastDislikedProfile(profile);
-        setPossibleMatches((prev) => {
-          const next = prev.filter((p) => p.id !== profile.id);
-          if (next.length < 15) backfillProfiles();
-          return next;
-        });
+        setPossibleMatches((prev) => prev.filter((p) => p.id !== profile.id));
+        setCurrentPhotoIndex(0);
       }
       if (!res.ok && res.status === 429) showToast('Günlük hakkınız doldu.', 'error');
       if (!res.ok && res.status !== 429) showToast('Dislike kaydedilemedi, tekrar dene.', 'error');
@@ -426,6 +406,7 @@ function HomeContent() {
       });
       if (res.ok) {
         setPossibleMatches((prev) => prev.filter((p) => p.id !== profile.id));
+        setCurrentPhotoIndex(0);
         setLastDislikedProfile((p) => (p?.id === profile.id ? null : p));
         showToast('Profil engellendi.', 'success');
       } else {
@@ -474,6 +455,7 @@ function HomeContent() {
       if (res.ok) {
         setPossibleMatches((prev) => prev.filter((p) => p.id !== profile.id));
         setMatches((prev) => prev.filter((m) => m.matchedWith.id !== profile.id));
+        setCurrentPhotoIndex(0);
         setShowReportModal(null);
         setReportReason('');
         showToast('Rapor alındı. Teşekkürler.', 'success');
@@ -501,6 +483,7 @@ function HomeContent() {
       if (res.ok && data.profile) {
         setPossibleMatches((prev) => [data.profile as Application, ...prev]);
         setLastDislikedProfile(null);
+        setCurrentPhotoIndex(0);
         if (data.undoRemaining !== undefined && limits) {
           setLimits((l) => l ? { ...l, undoRemaining: data.undoRemaining, undoResetAt: data.undoResetAt } : null);
         }
@@ -923,6 +906,9 @@ function HomeContent() {
   }
 
 
+  const currentCard = possibleMatches[0];
+  const allPhotos = currentCard ? [currentCard.photo_url, ...(currentCard.extra_photos || []).filter(Boolean)] : [];
+
   return (
     <main className="py-6 px-4 pb-24">
       <div className="max-w-lg mx-auto">
@@ -1032,19 +1018,16 @@ function HomeContent() {
         </div>
 
         {activeTab === 'discover' && (
-          <div>
+          <div className="min-h-[500px] flex flex-col items-center justify-center">
             <WeeklyHighlights />
 
-            {spotlight && userApplication && isCompatible(userApplication.gender, userApplication.sexual_preference, spotlight.gender, spotlight.sexual_preference) && !isLoadingPossible && possibleMatches.length > 0 && !possibleMatches.some(p => p.id === spotlight.id) && !matches.some(m => m.matchedWith.id === spotlight.id) && (
+            {spotlight && userApplication && isCompatible(userApplication.gender, userApplication.sexual_preference, spotlight.gender, spotlight.sexual_preference) && !isLoadingPossible && currentCard && spotlight.id !== currentCard.id && !matches.some(m => m.matchedWith.id === spotlight.id) && (
               <div className="w-full mb-4 animate-fade-in">
                 <div className="flex items-center gap-2 mb-2">
                   <i className="fa-solid fa-fire text-orange-400 text-sm"></i>
                   <span className="text-xs font-semibold text-orange-400 uppercase tracking-wider">Günün Profili</span>
                 </div>
-                <Link
-                  href={`/profil/${spotlight.id}`}
-                  className="block w-full relative rounded-2xl overflow-hidden border border-orange-500/20 shadow-lg shadow-orange-500/5 text-left"
-                >
+                <div className="relative rounded-2xl overflow-hidden border border-orange-500/20 shadow-lg shadow-orange-500/5">
                   <div className="flex items-center gap-3 p-3 bg-white/5">
                     {spotlight.photo_url && (
                       <RemoteImage src={spotlight.photo_url} alt="" width={48} height={48} className="w-12 h-12 rounded-full object-cover border-2 border-orange-400/50" />
@@ -1053,20 +1036,27 @@ function HomeContent() {
                       <p className="font-semibold text-sm truncate">{spotlight.first_name} {spotlight.last_name}</p>
                       <p className="text-xs text-gray-400">{spotlight.age} · {getGenderLabel(spotlight.gender)}</p>
                     </div>
-                    <span className="px-3 py-1.5 rounded-lg bg-orange-500/10 text-orange-400 text-xs font-medium">
+                    <button
+                      onClick={() => {
+                        if (!possibleMatches.find(p => p.id === spotlight.id)) {
+                          setPossibleMatches(prev => [spotlight, ...prev]);
+                        }
+                      }}
+                      className="px-3 py-1.5 rounded-lg bg-orange-500/10 text-orange-400 text-xs font-medium hover:bg-orange-500/20 transition-all"
+                    >
                       <i className="fa-solid fa-eye mr-1"></i>Profili Gör
-                    </span>
+                    </button>
                   </div>
-                </Link>
+                </div>
               </div>
             )}
 
             {isLoadingPossible ? (
               <div className="text-center py-12">
                 <div className="animate-spin w-10 h-10 border-4 border-[var(--matchup-primary)] border-t-transparent rounded-full mx-auto" />
-                <p className="mt-4 text-[var(--matchup-text-muted)]">Profiller yükleniyor...</p>
+                <p className="mt-4 text-[var(--matchup-text-muted)]">Profil getiriliyor...</p>
               </div>
-            ) : possibleMatches.length === 0 ? (
+            ) : !currentCard ? (
               <div className="card text-center py-12">
                 <i className="fa-solid fa-users text-5xl text-[var(--matchup-text-muted)] mb-4" />
                 <h3 className="text-xl font-bold mb-2">Şimdilik bu kadar</h3>
@@ -1075,62 +1065,107 @@ function HomeContent() {
               </div>
             ) : (
               <>
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-sm text-[var(--matchup-text-muted)]">{possibleMatches.length} profil</p>
-                  <button onClick={fetchPossibleMatches} className="text-xs text-[var(--matchup-text-muted)] hover:text-white flex items-center gap-1.5">
-                    <i className="fa-solid fa-arrows-rotate" /> Yenile
-                  </button>
-                </div>
-                {limits?.remaining === 0 && (
-                  <p className="text-center text-amber-400/80 text-xs mb-3 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                    <i className="fa-solid fa-clock mr-1.5" />Günlük hakkınız doldu. {limits.resetAt && formatResetAt(limits.resetAt)}
+                {possibleMatches.length > 1 && (
+                  <p className="text-xs text-[var(--matchup-text-muted)] mb-3">
+                    <i className="fa-solid fa-layer-group mr-1.5" />{possibleMatches.length} uyumlu profil sırada
                   </p>
                 )}
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
-                  {possibleMatches.map((profile) => (
-                    <div
-                      key={profile.id}
-                      className="rounded-2xl overflow-hidden bg-[var(--matchup-bg-card)] border border-[var(--matchup-border)] hover:border-[var(--matchup-primary)]/40 transition-all flex flex-col items-stretch"
-                    >
-                      <Link href={`/profil/${profile.id}`} className="block">
-                        <div className="relative aspect-[3/4] w-full">
-                          {profile.photo_url ? (
-                            <RemoteImage src={profile.photo_url} alt="" fill className="object-cover object-top" sizes="(max-width: 640px) 50vw, 33vw" />
-                          ) : (
-                            <div className="w-full h-full bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center">
-                              <i className="fa-solid fa-user text-3xl text-white/40" />
-                            </div>
-                          )}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-                          {formatLastActive(profile.last_active_at) && (
-                            <span className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded-full bg-black/60 text-white/70 text-[9px]">
-                              {formatLastActive(profile.last_active_at)}
-                            </span>
-                          )}
-                          <div className="absolute bottom-0 left-0 right-0 p-2">
-                            <p className="text-white font-semibold text-sm truncate drop-shadow-lg">{profile.first_name} {profile.last_name}</p>
-                            <p className="text-white/80 text-xs">{profile.age} · {getGenderLabel(profile.gender)}</p>
+                <div className="w-full animate-fade-in rounded-3xl overflow-hidden shadow-2xl">
+                  <PhotoSlider
+                    photos={allPhotos}
+                    value={currentPhotoIndex}
+                    onChange={setCurrentPhotoIndex}
+                    aspectClass="aspect-[4/5]"
+                    emptyIcon={<i className="fa-solid fa-user text-6xl text-white/50" />}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent pointer-events-none" />
+                    <div className="absolute bottom-0 left-0 right-0 pt-20 pb-5 px-5">
+                      {(() => {
+                        const badges = getInlineBadges(currentCard);
+                        return badges.length > 0 ? (
+                          <div className="flex flex-wrap gap-1 mb-2">
+                            {badges.map(b => (
+                              <span key={b.key} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${b.colorClass}`}>
+                                <i className={`fa-solid ${b.icon}`} style={{ fontSize: '9px' }} /> {b.label}
+                              </span>
+                            ))}
                           </div>
-                        </div>
-                      </Link>
-                      <div className="flex items-center justify-center gap-3 py-2 px-1">
-                        <button
-                          onClick={() => handleDislike(profile)}
-                          disabled={!!actionPending}
-                          className="w-9 h-9 rounded-full border border-red-500/40 text-red-400 hover:bg-red-500/10 flex items-center justify-center transition-all disabled:opacity-50 text-sm"
-                        >
-                          <i className="fa-solid fa-xmark" />
-                        </button>
-                        <button
-                          onClick={() => handleLike(profile)}
-                          disabled={!!actionPending || (limits !== null && limits.remaining === 0)}
-                          className="w-9 h-9 rounded-full bg-[var(--matchup-primary)] text-white flex items-center justify-center hover:scale-105 transition-all disabled:opacity-50 text-sm"
-                        >
-                          <i className="fa-solid fa-heart" />
-                        </button>
-                      </div>
+                        ) : null;
+                      })()}
+                      <h3 className="text-2xl font-bold text-white drop-shadow-lg">
+                        {currentCard.first_name} {currentCard.last_name}
+                      </h3>
+                      <p className="text-white/80 text-sm mt-0.5">
+                        {currentCard.age} · {getGenderLabel(currentCard.gender)}
+                        {formatLastActive(currentCard.last_active_at) && (
+                          <span className="ml-2 text-white/60 text-xs">· {formatLastActive(currentCard.last_active_at)}</span>
+                        )}
+                      </p>
+                      {currentCard.description && (
+                        <p className="text-white/60 text-sm mt-2 line-clamp-3">{currentCard.description}</p>
+                      )}
                     </div>
-                  ))}
+                  </PhotoSlider>
+
+                  {currentCard.prompts && Object.keys(currentCard.prompts).filter(k => currentCard.prompts?.[k]?.trim()).length > 0 && (
+                    <div className="rounded-xl bg-white/[0.06] border border-white/10 px-4 py-3 space-y-2.5 mx-4 mb-1">
+                      {PROFILE_PROMPTS.filter(p => currentCard.prompts?.[p.key]?.trim()).map(p => (
+                        <div key={p.key} className="pl-3 border-l-2 border-[var(--matchup-primary)]/60">
+                          <p className="text-[10px] font-semibold uppercase tracking-widest text-white/50">{p.label}</p>
+                          <p className="text-sm text-white/90 leading-relaxed mt-0.5">{currentCard.prompts![p.key]}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {limits?.remaining === 0 && (
+                  <p className="text-center text-[var(--matchup-text-muted)] text-sm mt-4">Günlük hakkınız doldu. 24 saat sonra yenilenecek veya Mağaza'dan daha fazla hak alabilirsiniz.</p>
+                )}
+                <div className="flex flex-col items-center gap-3 mt-8">
+                  <div className="flex items-center justify-center gap-8">
+                    <button
+                      onClick={() => handleDislike(currentCard)}
+                      disabled={!!actionPending}
+                      className="w-18 h-18 rounded-full border-2 border-red-500/50 text-red-400 hover:bg-red-500/10 flex items-center justify-center transition-all disabled:opacity-50"
+                    >
+                      <i className="fa-solid fa-xmark text-2xl" />
+                    </button>
+                    <button
+                      onClick={() => handleLike(currentCard)}
+                      disabled={!!actionPending || (limits !== null && limits.remaining === 0)}
+                      className="w-18 h-18 rounded-full bg-[var(--matchup-primary)] text-white flex items-center justify-center shadow-lg hover:scale-105 transition-all disabled:opacity-50"
+                    >
+                      <i className="fa-solid fa-heart text-2xl" />
+                    </button>
+                  </div>
+                  {lastDislikedProfile && (limits?.undoRemaining ?? 1) > 0 && (
+                    <button
+                      onClick={handleUndo}
+                      disabled={!!actionPending}
+                      className="text-sm text-[var(--matchup-text-muted)] hover:text-white transition-colors flex items-center gap-1.5"
+                    >
+                      <i className="fa-solid fa-rotate-left text-xs" /> Geri al
+                      {limits?.undoRemaining != null && limits.undoRemaining < 5 && (
+                        <span className="text-[10px] opacity-70">({limits.undoRemaining} hak)</span>
+                      )}
+                    </button>
+                  )}
+                  <div className="flex items-center gap-4 text-xs text-[var(--matchup-text-muted)]">
+                    <button
+                      onClick={() => handleBlock(currentCard)}
+                      disabled={!!blockReportPending}
+                      className="hover:text-red-400 transition-colors flex items-center gap-1"
+                    >
+                      <i className="fa-solid fa-ban" /> Engelle
+                    </button>
+                    <button
+                      onClick={() => setShowReportModal(currentCard)}
+                      disabled={!!blockReportPending}
+                      className="hover:text-amber-400 transition-colors flex items-center gap-1"
+                    >
+                      <i className="fa-solid fa-flag" /> Raporla
+                    </button>
+                  </div>
                 </div>
               </>
             )}
