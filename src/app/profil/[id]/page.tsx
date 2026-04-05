@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { use, useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -37,7 +37,8 @@ function formatLastActive(iso: string | null | undefined): string | null {
   return null;
 }
 
-export default function ProfilePage({ params }: { params: { id: string } }) {
+export default function ProfilePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id: profileId } = use(params);
   const { data: session, status } = useSession();
   const router = useRouter();
   const [profile, setProfile] = useState<Application | null>(null);
@@ -69,7 +70,7 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
     if (status === 'loading') return;
     if (!session?.user) { setLoading(false); return; }
 
-    fetch(`/api/profile/${params.id}`)
+    fetch(`/api/profile/${profileId}`)
       .then(r => {
         if (!r.ok) { setNotFound(true); setLoading(false); return null; }
         return r.json();
@@ -79,7 +80,7 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
         setLoading(false);
       })
       .catch(() => { setNotFound(true); setLoading(false); });
-  }, [params.id, session?.user, status]);
+  }, [profileId, session?.user, status]);
 
   const handleLike = async () => {
     if (!profile || !selectedCharacter) return;

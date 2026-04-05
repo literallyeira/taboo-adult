@@ -4,13 +4,13 @@ import { authOptions } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import type { Application } from '@/lib/supabase';
 
-export async function GET(_request: Request, { params }: { params: { id: string } }) {
+export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.gtawId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { id } = params;
+  const { id } = await params;
   if (!id) {
     return NextResponse.json({ error: 'Profile ID gerekli' }, { status: 400 });
   }
