@@ -61,7 +61,7 @@ export default function RootLayout({
           <PartnersSection />
 
           {/* Global Footer */}
-          <footer className="w-full py-8 px-6 border-t border-white/5 bg-[#0c0c0c]/80">
+          <footer className="w-full py-8 px-6 border-t border-white/5 bg-[#0a0a0a]/80">
             <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-xs">
               <div className="flex flex-col items-center md:items-start gap-4">
                 <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8">

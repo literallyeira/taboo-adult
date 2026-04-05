@@ -6,7 +6,33 @@ import { getWantedGenders } from '@/lib/compatibility';
 import { getProfileCompleteness } from '@/lib/profile-completeness';
 import type { Application } from '@/lib/supabase';
 
-// GET - Olası eşleşmeler: uyumlu, henüz like/dislike/match olmamış profiller
+function getActivityScore(app: Application): number {
+  if (!app.last_active_at) return 2;
+  const hoursAgo = (Date.now() - new Date(app.last_active_at).getTime()) / 3_600_000;
+  if (hoursAgo <= 24) return 5;
+  if (hoursAgo <= 72) return 4;
+  if (hoursAgo <= 168) return 3;
+  if (hoursAgo <= 336) return 2;
+  return 1;
+}
+
+function shuffleWithinBands<T>(items: T[], scoreFn: (item: T) => number): T[] {
+  const bands = new Map<number, T[]>();
+  for (const item of items) {
+    const s = scoreFn(item);
+    if (!bands.has(s)) bands.set(s, []);
+    bands.get(s)!.push(item);
+  }
+  for (const arr of bands.values()) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+  }
+  const sorted = [...bands.entries()].sort((a, b) => b[0] - a[0]);
+  return sorted.flatMap(([, arr]) => arr);
+}
+
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
 
@@ -36,11 +62,13 @@ export async function GET(request: Request) {
 
     const myApplication = myApp as Application;
 
-    // 5 bağımsız sorguyu paralel çalıştır (blocked dahil)
     const tenHoursAgo = new Date(Date.now() - 10 * 60 * 60 * 1000).toISOString();
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-    const [likesRes, dislikesRes, matchesRes, boostsRes, blockedRes] = await Promise.all([
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+    const [likesRes, recentLikesRes, dislikesRes, matchesRes, boostsRes, blockedRes] = await Promise.all([
       supabase.from('likes').select('to_application_id').eq('from_application_id', myApplication.id),
+      supabase.from('likes').select('to_application_id').eq('from_application_id', myApplication.id).gt('created_at', thirtyDaysAgo),
       supabase.from('dislikes').select('to_application_id').eq('from_application_id', myApplication.id).gt('created_at', tenHoursAgo),
       supabase
         .from('matches')
@@ -51,7 +79,8 @@ export async function GET(request: Request) {
       supabase.from('blocked_users').select('blocked_application_id').eq('blocker_application_id', myApplication.id),
     ]);
 
-    const likedIds = (likesRes.data ?? []).map((r: { to_application_id: string }) => r.to_application_id);
+    const allLikedIds = (likesRes.data ?? []).map((r: { to_application_id: string }) => r.to_application_id);
+    const recentLikedIds = (recentLikesRes.data ?? []).map((r: { to_application_id: string }) => r.to_application_id);
     const dislikedIds = (dislikesRes.data ?? []).map((r: { to_application_id: string }) => r.to_application_id);
     const matchedIds: string[] = [];
     (matchesRes.data ?? []).forEach((m: { application_1_id: string; application_2_id: string }) => {
@@ -61,16 +90,11 @@ export async function GET(request: Request) {
     const boostedIds = new Set((boostsRes.data ?? []).map((r: { application_id: string }) => r.application_id));
     const blockedIds = (blockedRes.data ?? []).map((r: { blocked_application_id: string }) => r.blocked_application_id);
 
-    const excludeIds = [...new Set([myApplication.id, ...likedIds, ...dislikedIds, ...matchedIds, ...blockedIds])];
-
-    // Uyumluluk: benim aradığım cinsiyetler
     const myWanted = getWantedGenders(myApplication.gender, myApplication.sexual_preference);
     if (myWanted.length === 0) {
       return NextResponse.json({ possibleMatches: [], hasApplication: true, application: myApplication });
     }
 
-    // DB tarafında filtrele: cinsiyet uyumu + exclude ID'ler
-    // Karşı tarafın tercihinin benim cinsiyetimi içerip içermediğini de DB'de kontrol ediyoruz
     const genderFilters: string[] = [];
     for (const g of myWanted) {
       if (myApplication.gender === 'erkek') {
@@ -80,19 +104,8 @@ export async function GET(request: Request) {
       }
     }
 
-    // Havuz çok daraldığında (hesap sil/aç veya yoğun swipe sonrası),
-    // sadece strict exclude ile sınırlı kalınca kullanıcı 1-2 profile kilitlenebiliyor.
-    // Bu yüzden kademeli fallback yapıyoruz.
-    // 3 günden eski aktiflik: DB'de sadece .gte kullanınca last_active_at NULL olan tüm profiller eleniyordu
-    // (çoğu kayıtta NULL) → havuz 2-3 kişiye düşüyordu. NULL = henüz takip edilmiyor, gösterilmeye devam.
-    const threeDaysMs = Date.now() - 3 * 24 * 60 * 60 * 1000;
-    const passesActiveWindow = (row: Application) => {
-      if (!row.last_active_at) return true;
-      return new Date(row.last_active_at).getTime() >= threeDaysMs;
-    };
-
     const fetchCompatible = async (idsToExclude: string[], fetchLimit: number) => {
-      const overFetch = Math.min(Math.max(fetchLimit * 5, 80), 400);
+      const overFetch = Math.min(Math.max(fetchLimit * 5, 100), 500);
       let q = supabase
         .from('applications')
         .select('*')
@@ -107,16 +120,15 @@ export async function GET(request: Request) {
 
       const { data, error } = await q;
       if (error) return { data: null, error };
-      const filtered = ((data ?? []) as Application[]).filter(passesActiveWindow).slice(0, fetchLimit);
-      return { data: filtered, error: null };
+      return { data: (data ?? []) as Application[], error: null };
     };
 
-    const strictExcludeIds = excludeIds;
-    // Like/Dislike atan profil tekrar gelmesin (refresh'te geri dönme bug fix)
-    const alwaysExcludeIds = [...new Set([myApplication.id, ...likedIds, ...dislikedIds, ...blockedIds])];
-    // Kademeli gevşetmede yalnızca eski match geçmişini serbest bırakıyoruz
-    const relaxedExcludeIds = alwaysExcludeIds;
-    const minimalExcludeIds = alwaysExcludeIds;
+    // Strict: tüm likes + dislikes (10h) + matches (7d) + blocked + self
+    const strictExcludeIds = [...new Set([myApplication.id, ...allLikedIds, ...dislikedIds, ...matchedIds, ...blockedIds])];
+    // Relaxed: tüm likes + blocked + self (dislike ve match exclusion düşürülür)
+    const relaxedExcludeIds = [...new Set([myApplication.id, ...allLikedIds, ...blockedIds])];
+    // Minimal: sadece son 30 gün likes + blocked + self (eski tek taraflı beğeniler geri gelir)
+    const minimalExcludeIds = [...new Set([myApplication.id, ...recentLikedIds, ...blockedIds])];
 
     const mergedById = new Map<string, Application>();
     const addBatch = (rows: Application[]) => {
@@ -125,7 +137,8 @@ export async function GET(request: Request) {
       }
     };
 
-    const fetchSize = Math.min(limit + 30, 100);
+    const fetchSize = Math.min(limit + 40, 120);
+
     const { data: strictRows, error: strictErr } = await fetchCompatible(strictExcludeIds, fetchSize);
     if (strictErr) {
       return NextResponse.json({ error: 'Başvurular alınamadı' }, { status: 500 });
@@ -156,10 +169,17 @@ export async function GET(request: Request) {
 
     const apps = Array.from(mergedById.values());
 
-    const boostedFirst = apps.filter((a) => boostedIds.has(a.id));
-    const rest = apps.filter((a) => !boostedIds.has(a.id));
-    rest.sort((a, b) => getProfileCompleteness(b) - getProfileCompleteness(a));
-    const ranked = [...boostedFirst.slice(0, 10), ...rest];
+    // Boost'lu profiller en üstte, sonra aktiflik+completeness+shuffle ile sırala
+    const boostedApps = apps.filter((a) => boostedIds.has(a.id));
+    const normalApps = apps.filter((a) => !boostedIds.has(a.id));
+
+    const rankedNormal = shuffleWithinBands(normalApps, (a) => {
+      const activity = getActivityScore(a);
+      const completeness = getProfileCompleteness(a) >= 60 ? 1 : 0;
+      return activity * 2 + completeness;
+    });
+
+    const ranked = [...boostedApps.slice(0, 10), ...rankedNormal];
     const candidateIds = ranked.slice(0, limit).map((a) => a.id);
 
     const [likesToCount, matchesCount] = await Promise.all([
@@ -195,7 +215,6 @@ export async function GET(request: Request) {
       match_count: matchCountMap[a.id] || 0,
     }));
 
-    // Profil görüntülenme kaydı (ilk 5 için, arka planda)
     if (possible.length > 0) {
       const viewRecords = possible.slice(0, 5).map(p => ({
         viewer_application_id: myApplication.id,

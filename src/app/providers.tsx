@@ -6,7 +6,7 @@ import { RefTracker } from '@/components/RefTracker';
 
 export function Providers({ children }: { children: React.ReactNode }) {
     return (
-        <SessionProvider>
+        <SessionProvider refetchOnWindowFocus={false}>
             <Suspense fallback={null}>
                 <RefTracker />
             </Suspense>
