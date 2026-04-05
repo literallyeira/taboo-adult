@@ -19,9 +19,6 @@ export async function GET(request: Request) {
     }
 
     try {
-        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-
-        // First, find the user's application for this character
         const { data: myApplication, error: appError } = await supabase
             .from('applications')
             .select('*')
@@ -54,7 +51,6 @@ export async function GET(request: Request) {
         )
       `)
                 .or(`application_1_id.eq.${myApplication.id},application_2_id.eq.${myApplication.id}`)
-                .gt('created_at', sevenDaysAgo)
                 .order('created_at', { ascending: false }),
             supabase.from('blocked_users').select('blocked_application_id').eq('blocker_application_id', myApplication.id),
         ]);

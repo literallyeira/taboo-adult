@@ -1065,31 +1065,48 @@ function HomeContent() {
                 )}
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
                   {possibleMatches.map((profile) => (
-                    <Link
+                    <div
                       key={profile.id}
-                      href={`/profil/${profile.id}`}
-                      className="rounded-2xl overflow-hidden bg-[var(--matchup-bg-card)] border border-[var(--matchup-border)] hover:border-[var(--matchup-primary)]/40 transition-all text-left flex flex-col items-stretch"
+                      className="rounded-2xl overflow-hidden bg-[var(--matchup-bg-card)] border border-[var(--matchup-border)] hover:border-[var(--matchup-primary)]/40 transition-all flex flex-col items-stretch"
                     >
-                      <div className="relative aspect-[3/4] w-full">
-                        {profile.photo_url ? (
-                          <RemoteImage src={profile.photo_url} alt="" fill className="object-cover object-top" sizes="(max-width: 640px) 50vw, 33vw" />
-                        ) : (
-                          <div className="w-full h-full bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center">
-                            <i className="fa-solid fa-user text-3xl text-white/40" />
+                      <Link href={`/profil/${profile.id}`} className="block">
+                        <div className="relative aspect-[3/4] w-full">
+                          {profile.photo_url ? (
+                            <RemoteImage src={profile.photo_url} alt="" fill className="object-cover object-top" sizes="(max-width: 640px) 50vw, 33vw" />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center">
+                              <i className="fa-solid fa-user text-3xl text-white/40" />
+                            </div>
+                          )}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+                          {formatLastActive(profile.last_active_at) && (
+                            <span className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded-full bg-black/60 text-white/70 text-[9px]">
+                              {formatLastActive(profile.last_active_at)}
+                            </span>
+                          )}
+                          <div className="absolute bottom-0 left-0 right-0 p-2">
+                            <p className="text-white font-semibold text-sm truncate drop-shadow-lg">{profile.first_name} {profile.last_name}</p>
+                            <p className="text-white/80 text-xs">{profile.age} · {getGenderLabel(profile.gender)}</p>
                           </div>
-                        )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-                        {formatLastActive(profile.last_active_at) && (
-                          <span className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded-full bg-black/60 text-white/70 text-[9px]">
-                            {formatLastActive(profile.last_active_at)}
-                          </span>
-                        )}
-                        <div className="absolute bottom-0 left-0 right-0 p-2">
-                          <p className="text-white font-semibold text-sm truncate drop-shadow-lg">{profile.first_name} {profile.last_name}</p>
-                          <p className="text-white/80 text-xs">{profile.age} · {getGenderLabel(profile.gender)}</p>
                         </div>
+                      </Link>
+                      <div className="flex items-center justify-center gap-3 py-2 px-1">
+                        <button
+                          onClick={() => handleDislike(profile)}
+                          disabled={!!actionPending}
+                          className="w-9 h-9 rounded-full border border-red-500/40 text-red-400 hover:bg-red-500/10 flex items-center justify-center transition-all disabled:opacity-50 text-sm"
+                        >
+                          <i className="fa-solid fa-xmark" />
+                        </button>
+                        <button
+                          onClick={() => handleLike(profile)}
+                          disabled={!!actionPending || (limits !== null && limits.remaining === 0)}
+                          className="w-9 h-9 rounded-full bg-[var(--matchup-primary)] text-white flex items-center justify-center hover:scale-105 transition-all disabled:opacity-50 text-sm"
+                        >
+                          <i className="fa-solid fa-heart" />
+                        </button>
                       </div>
-                    </Link>
+                    </div>
                   ))}
                 </div>
               </>
