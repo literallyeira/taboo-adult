@@ -275,7 +275,7 @@ function HomeContent() {
         setIsLoadingPossible(false);
         return;
       }
-      const res = await fetch(`/api/possible-matches?characterId=${selectedCharacter.id}&limit=50`);
+      const res = await fetch(`/api/possible-matches?characterId=${selectedCharacter.id}&limit=20`);
       const data = await res.json();
       setPossibleMatches(data.possibleMatches || []);
     } catch (e) {
@@ -339,6 +339,21 @@ function HomeContent() {
     });
   }, [activeTab, selectedCharacter?.id, testMode, matches]);
 
+  const backfillProfiles = useCallback(async () => {
+    if (!selectedCharacter || testMode) return;
+    try {
+      const res = await fetch(`/api/possible-matches?characterId=${selectedCharacter.id}&limit=20`);
+      const data = await res.json();
+      if (data.possibleMatches) {
+        setPossibleMatches(prev => {
+          const existingIds = new Set(prev.map(p => p.id));
+          const newOnes = (data.possibleMatches as Application[]).filter(p => !existingIds.has(p.id));
+          return [...prev, ...newOnes].slice(0, 20);
+        });
+      }
+    } catch { /* ignore */ }
+  }, [selectedCharacter, testMode]);
+
   const handleLike = async (profile: Application) => {
     if (!selectedCharacter || testMode) return;
     setActionPending(profile.id);
@@ -350,7 +365,11 @@ function HomeContent() {
       });
       const data = await res.json();
       if (res.ok) {
-        setPossibleMatches((prev) => prev.filter((p) => p.id !== profile.id));
+        setPossibleMatches((prev) => {
+          const next = prev.filter((p) => p.id !== profile.id);
+          if (next.length < 15) backfillProfiles();
+          return next;
+        });
         if (data.remaining !== undefined && limits) setLimits((l) => l ? { ...l, remaining: data.remaining, resetAt: data.resetAt || l.resetAt } : null);
         if (data.isMatch) {
           setShowMatchModal(profile);
@@ -380,7 +399,11 @@ function HomeContent() {
       const data = res.ok ? await res.json() : {};
       if (res.ok) {
         setLastDislikedProfile(profile);
-        setPossibleMatches((prev) => prev.filter((p) => p.id !== profile.id));
+        setPossibleMatches((prev) => {
+          const next = prev.filter((p) => p.id !== profile.id);
+          if (next.length < 15) backfillProfiles();
+          return next;
+        });
       }
       if (!res.ok && res.status === 429) showToast('Günlük hakkınız doldu.', 'error');
       if (!res.ok && res.status !== 429) showToast('Dislike kaydedilemedi, tekrar dene.', 'error');

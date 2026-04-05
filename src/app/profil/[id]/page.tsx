@@ -8,7 +8,6 @@ import Link from 'next/link';
 import type { Application } from '@/lib/supabase';
 import { PROFILE_PROMPTS } from '@/lib/prompts';
 import { getInlineBadges } from '@/lib/badges-client';
-import { PhotoSlider } from '@/components/PhotoSlider';
 import { RemoteImage } from '@/components/RemoteImage';
 
 interface Character {
@@ -21,6 +20,8 @@ interface Character {
 const getGenderLabel = (v: string) => ({ erkek: 'Erkek', kadin: 'Kadın' }[v] || v);
 const getPreferenceLabel = (v: string) =>
   ({ heteroseksuel: 'Heteroseksüel', homoseksuel: 'Homoseksüel', biseksuel: 'Biseksüel' }[v] || v);
+const getLookingForLabel = (v: string | null | undefined) =>
+  ({ friends: 'Arkadaşlık', dating: 'İlişki' }[v || ''] || null);
 
 function formatLastActive(iso: string | null | undefined): string | null {
   if (!iso) return null;
@@ -44,7 +45,6 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   const [profile, setProfile] = useState<Application | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const [photoIndex, setPhotoIndex] = useState(0);
   const [actionPending, setActionPending] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
@@ -54,10 +54,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   useEffect(() => {
     try {
       const raw = localStorage.getItem('matchup_selected_character');
-      if (raw) {
-        const saved = JSON.parse(raw) as Character;
-        setSelectedCharacter(saved);
-      }
+      if (raw) setSelectedCharacter(JSON.parse(raw) as Character);
     } catch { /* ignore */ }
   }, []);
 
@@ -69,16 +66,9 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   useEffect(() => {
     if (status === 'loading') return;
     if (!session?.user) { setLoading(false); return; }
-
     fetch(`/api/profile/${profileId}`)
-      .then(r => {
-        if (!r.ok) { setNotFound(true); setLoading(false); return null; }
-        return r.json();
-      })
-      .then(data => {
-        if (data?.profile) setProfile(data.profile);
-        setLoading(false);
-      })
+      .then(r => { if (!r.ok) { setNotFound(true); setLoading(false); return null; } return r.json(); })
+      .then(data => { if (data?.profile) setProfile(data.profile); setLoading(false); })
       .catch(() => { setNotFound(true); setLoading(false); });
   }, [profileId, session?.user, status]);
 
@@ -103,11 +93,8 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
       } else {
         showToast(data.error || 'Bir hata oluştu', 'error');
       }
-    } catch {
-      showToast('Bağlantı hatası', 'error');
-    } finally {
-      setActionPending(null);
-    }
+    } catch { showToast('Bağlantı hatası', 'error'); }
+    finally { setActionPending(null); }
   };
 
   const handleDislike = async () => {
@@ -119,18 +106,10 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ toApplicationId: profile.id, characterId: selectedCharacter.id }),
       });
-      if (res.ok) {
-        showToast('Geçildi', 'success');
-        setTimeout(() => router.back(), 500);
-      } else {
-        const data = await res.json();
-        showToast(data.error || 'Hata', 'error');
-      }
-    } catch {
-      showToast('Bağlantı hatası', 'error');
-    } finally {
-      setActionPending(null);
-    }
+      if (res.ok) { showToast('Geçildi', 'success'); setTimeout(() => router.back(), 500); }
+      else { const data = await res.json(); showToast(data.error || 'Hata', 'error'); }
+    } catch { showToast('Bağlantı hatası', 'error'); }
+    finally { setActionPending(null); }
   };
 
   const handleBlock = async () => {
@@ -143,18 +122,10 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ blockedApplicationId: profile.id, characterId: selectedCharacter.id }),
       });
-      if (res.ok) {
-        showToast('Profil engellendi.', 'success');
-        setTimeout(() => router.back(), 800);
-      } else {
-        const data = await res.json();
-        showToast(data.error || 'Engellenemedi.', 'error');
-      }
-    } catch {
-      showToast('Bağlantı hatası.', 'error');
-    } finally {
-      setActionPending(null);
-    }
+      if (res.ok) { showToast('Profil engellendi.', 'success'); setTimeout(() => router.back(), 800); }
+      else { const data = await res.json(); showToast(data.error || 'Engellenemedi.', 'error'); }
+    } catch { showToast('Bağlantı hatası.', 'error'); }
+    finally { setActionPending(null); }
   };
 
   const handleReport = async () => {
@@ -168,18 +139,11 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
       });
       if (res.ok) {
         showToast('Rapor alındı. Teşekkürler.', 'success');
-        setShowReportModal(false);
-        setReportReason('');
+        setShowReportModal(false); setReportReason('');
         setTimeout(() => router.back(), 800);
-      } else {
-        const data = await res.json();
-        showToast(data.error || 'Rapor gönderilemedi.', 'error');
-      }
-    } catch {
-      showToast('Bağlantı hatası.', 'error');
-    } finally {
-      setActionPending(null);
-    }
+      } else { const data = await res.json(); showToast(data.error || 'Rapor gönderilemedi.', 'error'); }
+    } catch { showToast('Bağlantı hatası.', 'error'); }
+    finally { setActionPending(null); }
   };
 
   if (loading || status === 'loading') {
@@ -212,9 +176,10 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   const photos = [profile.photo_url, ...(profile.extra_photos || [])].filter(Boolean);
   const badges = getInlineBadges(profile);
   const activeText = formatLastActive(profile.last_active_at);
+  const lookingFor = getLookingForLabel(profile.looking_for);
 
   return (
-    <div className="min-h-screen pb-24">
+    <div className="min-h-screen pb-32">
       <header className="sticky top-0 z-20 border-b border-white/10 bg-[#0a0a0a]/95 backdrop-blur">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
           <button onClick={() => router.back()} className="flex items-center gap-2 text-sm text-[var(--matchup-text-muted)] hover:text-white transition-colors">
@@ -227,18 +192,30 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto">
-        <PhotoSlider
-          photos={photos}
-          value={photoIndex}
-          onChange={setPhotoIndex}
-          aspectClass="aspect-[4/5]"
-          emptyIcon={<i className="fa-solid fa-user text-6xl text-white/50" />}
-        >
-          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent pointer-events-none" />
-          <div className="absolute bottom-0 left-0 right-0 pt-20 pb-5 px-5">
+      <main className="max-w-2xl mx-auto px-4 py-6">
+        {/* Profil Üst Kısım */}
+        <div className="flex items-start gap-4 mb-6">
+          <div className="w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0 border-2 border-[var(--matchup-border)]">
+            {profile.photo_url ? (
+              <RemoteImage src={profile.photo_url} alt="" width={96} height={96} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center">
+                <i className="fa-solid fa-user text-2xl text-white/40" />
+              </div>
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl font-bold truncate">{profile.first_name} {profile.last_name}</h1>
+            <p className="text-sm text-[var(--matchup-text-muted)] mt-0.5">
+              {profile.age} · {getGenderLabel(profile.gender)} · {getPreferenceLabel(profile.sexual_preference)}
+            </p>
+            {activeText && (
+              <p className="text-xs text-emerald-400 mt-1">
+                <i className="fa-solid fa-circle text-[6px] mr-1.5 align-middle" />{activeText}
+              </p>
+            )}
             {badges.length > 0 && (
-              <div className="flex flex-wrap gap-1 mb-2">
+              <div className="flex flex-wrap gap-1 mt-2">
                 {badges.map(b => (
                   <span key={b.key} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${b.colorClass}`}>
                     <i className={`fa-solid ${b.icon}`} style={{ fontSize: '9px' }} /> {b.label}
@@ -246,84 +223,115 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                 ))}
               </div>
             )}
-            <h1 className="text-2xl font-bold text-white drop-shadow-lg">
-              {profile.first_name} {profile.last_name}
-            </h1>
-            <p className="text-white/80 text-sm mt-0.5">
-              {profile.age} · {getGenderLabel(profile.gender)} · {getPreferenceLabel(profile.sexual_preference)}
-              {activeText && <span className="ml-2 text-white/60 text-xs">· {activeText}</span>}
-            </p>
           </div>
-        </PhotoSlider>
+        </div>
 
-        <div className="px-4 py-4 space-y-4">
+        {/* Bilgi Kartları */}
+        <div className="space-y-4">
+          {/* Bio */}
           {profile.description && (
-            <p className="text-sm text-[var(--matchup-text-muted)] leading-relaxed">{profile.description}</p>
+            <div className="rounded-xl bg-[var(--matchup-bg-card)] border border-[var(--matchup-border)] p-4">
+              <h2 className="text-xs font-semibold text-[var(--matchup-text-muted)] uppercase tracking-wider mb-2">Hakkında</h2>
+              <p className="text-sm leading-relaxed">{profile.description}</p>
+            </div>
           )}
 
+          {/* Detaylar */}
+          {lookingFor && (
+            <div className="rounded-xl bg-[var(--matchup-bg-card)] border border-[var(--matchup-border)] p-4">
+              <h2 className="text-xs font-semibold text-[var(--matchup-text-muted)] uppercase tracking-wider mb-2">Aradığı</h2>
+              <p className="text-sm"><i className="fa-solid fa-magnifying-glass mr-2 text-[var(--matchup-primary)]" />{lookingFor}</p>
+            </div>
+          )}
+
+          {/* Fotoğraflar */}
+          {photos.length > 1 && (
+            <div className="rounded-xl bg-[var(--matchup-bg-card)] border border-[var(--matchup-border)] p-4">
+              <h2 className="text-xs font-semibold text-[var(--matchup-text-muted)] uppercase tracking-wider mb-3">Fotoğraflar</h2>
+              <div className="grid grid-cols-3 gap-2">
+                {photos.map((url, i) => (
+                  <div key={i} className="aspect-square rounded-xl overflow-hidden">
+                    <RemoteImage src={url} alt="" width={200} height={200} className="w-full h-full object-cover" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Prompt Cevapları */}
           {profile.prompts && Object.keys(profile.prompts).filter(k => profile.prompts?.[k]?.trim()).length > 0 && (
-            <div className="rounded-xl bg-white/[0.06] border border-white/10 px-4 py-3 space-y-2.5">
+            <div className="space-y-3">
               {PROFILE_PROMPTS.filter(p => profile.prompts?.[p.key]?.trim()).map(p => (
-                <div key={p.key} className="pl-3 border-l-2 border-[var(--matchup-primary)]/60">
-                  <p className="text-[10px] font-semibold uppercase tracking-widest text-white/50">{p.label}</p>
-                  <p className="text-sm text-white/90 leading-relaxed mt-0.5">{profile.prompts![p.key]}</p>
+                <div key={p.key} className="rounded-xl bg-[var(--matchup-bg-card)] border border-[var(--matchup-border)] p-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--matchup-primary)] mb-1.5">{p.label}</p>
+                  <p className="text-sm leading-relaxed">{profile.prompts![p.key]}</p>
                 </div>
               ))}
             </div>
           )}
 
-          {selectedCharacter && (
-            <>
-              <div className="flex items-center justify-center gap-6 pt-2">
-                <button
-                  onClick={handleDislike}
-                  disabled={!!actionPending}
-                  className="w-16 h-16 rounded-full border-2 border-red-500/50 text-red-400 hover:bg-red-500/10 flex items-center justify-center transition-all disabled:opacity-50"
-                >
-                  <i className="fa-solid fa-xmark text-2xl" />
-                </button>
-                <button
-                  onClick={handleLike}
-                  disabled={!!actionPending}
-                  className="w-16 h-16 rounded-full bg-[var(--matchup-primary)] text-white flex items-center justify-center shadow-lg hover:scale-105 transition-all disabled:opacity-50"
-                >
-                  <i className="fa-solid fa-heart text-2xl" />
-                </button>
-              </div>
-
-              <div className="flex items-center justify-center gap-4 text-xs text-[var(--matchup-text-muted)]">
-                <button
-                  onClick={handleBlock}
-                  disabled={!!actionPending}
-                  className="hover:text-red-400 transition-colors flex items-center gap-1"
-                >
-                  <i className="fa-solid fa-ban" /> Engelle
-                </button>
-                <button
-                  onClick={() => setShowReportModal(true)}
-                  disabled={!!actionPending}
-                  className="hover:text-amber-400 transition-colors flex items-center gap-1"
-                >
-                  <i className="fa-solid fa-flag" /> Raporla
-                </button>
-              </div>
-            </>
+          {/* Facebrowser */}
+          {profile.facebrowser && (
+            <a
+              href={`https://face-tr.gta.world/profile/${profile.facebrowser.replace(/^@/, '')}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 rounded-xl bg-[var(--matchup-bg-card)] border border-[var(--matchup-border)] p-4 hover:border-[var(--matchup-primary)]/40 transition-all"
+            >
+              <i className="fa-solid fa-at text-[var(--matchup-primary)]" />
+              <span className="text-sm">{profile.facebrowser}</span>
+              <i className="fa-solid fa-arrow-up-right-from-square text-xs text-[var(--matchup-text-muted)] ml-auto" />
+            </a>
           )}
         </div>
       </main>
+
+      {/* Sticky Alt Bar — Like / Dislike / Engelle / Raporla */}
+      {selectedCharacter && (
+        <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-white/10 bg-[#0a0a0a]/95 backdrop-blur">
+          <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleBlock}
+                disabled={!!actionPending}
+                className="text-xs text-[var(--matchup-text-muted)] hover:text-red-400 transition-colors flex items-center gap-1"
+              >
+                <i className="fa-solid fa-ban" /> Engelle
+              </button>
+              <button
+                onClick={() => setShowReportModal(true)}
+                disabled={!!actionPending}
+                className="text-xs text-[var(--matchup-text-muted)] hover:text-amber-400 transition-colors flex items-center gap-1"
+              >
+                <i className="fa-solid fa-flag" /> Raporla
+              </button>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleDislike}
+                disabled={!!actionPending}
+                className="w-11 h-11 rounded-full border-2 border-red-500/50 text-red-400 hover:bg-red-500/10 flex items-center justify-center transition-all disabled:opacity-50"
+              >
+                <i className="fa-solid fa-xmark text-lg" />
+              </button>
+              <button
+                onClick={handleLike}
+                disabled={!!actionPending}
+                className="w-11 h-11 rounded-full bg-[var(--matchup-primary)] text-white flex items-center justify-center shadow-lg hover:scale-105 transition-all disabled:opacity-50"
+              >
+                <i className="fa-solid fa-heart text-lg" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showReportModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 animate-fade-in" onClick={() => { setShowReportModal(false); setReportReason(''); }}>
           <div className="card max-w-sm w-full animate-fade-in" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-lg font-bold mb-2">Raporla</h2>
-            <p className="text-[var(--matchup-text-muted)] text-sm mb-3">{profile.first_name} {profile.last_name} profili hakkında şikayette bulunuyorsunuz.</p>
-            <textarea
-              className="form-input text-sm min-h-[80px] mb-4"
-              placeholder="Sebep (isteğe bağlı)"
-              value={reportReason}
-              onChange={(e) => setReportReason(e.target.value)}
-              maxLength={500}
-            />
+            <p className="text-[var(--matchup-text-muted)] text-sm mb-3">{profile.first_name} {profile.last_name} hakkında şikayette bulunuyorsunuz.</p>
+            <textarea className="form-input text-sm min-h-[80px] mb-4" placeholder="Sebep (isteğe bağlı)" value={reportReason} onChange={(e) => setReportReason(e.target.value)} maxLength={500} />
             <div className="flex gap-2">
               <button onClick={() => { setShowReportModal(false); setReportReason(''); }} className="btn-secondary flex-1">İptal</button>
               <button onClick={handleReport} disabled={!!actionPending} className="btn-primary flex-1">
