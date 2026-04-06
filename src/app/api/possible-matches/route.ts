@@ -62,14 +62,14 @@ export async function GET(request: Request) {
 
     const myApplication = myApp as Application;
 
-    const tenHoursAgo = new Date(Date.now() - 10 * 60 * 60 * 1000).toISOString();
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
     const [likesRes, recentLikesRes, dislikesRes, matchesRes, boostsRes, blockedRes] = await Promise.all([
       supabase.from('likes').select('to_application_id').eq('from_application_id', myApplication.id),
       supabase.from('likes').select('to_application_id').eq('from_application_id', myApplication.id).gt('created_at', thirtyDaysAgo),
-      supabase.from('dislikes').select('to_application_id').eq('from_application_id', myApplication.id).gt('created_at', tenHoursAgo),
+      supabase.from('dislikes').select('to_application_id').eq('from_application_id', myApplication.id).gt('created_at', twentyFourHoursAgo),
       supabase
         .from('matches')
         .select('application_1_id, application_2_id')
@@ -123,12 +123,12 @@ export async function GET(request: Request) {
       return { data: (data ?? []) as Application[], error: null };
     };
 
-    // Strict: tüm likes + dislikes (10h) + matches (7d) + blocked + self
+    // Strict: tüm likes + dislikes (24h) + matches (7d) + blocked + self
     const strictExcludeIds = [...new Set([myApplication.id, ...allLikedIds, ...dislikedIds, ...matchedIds, ...blockedIds])];
-    // Relaxed: tüm likes + blocked + self (dislike ve match exclusion düşürülür)
-    const relaxedExcludeIds = [...new Set([myApplication.id, ...allLikedIds, ...blockedIds])];
-    // Minimal: sadece son 30 gün likes + blocked + self (eski tek taraflı beğeniler geri gelir)
-    const minimalExcludeIds = [...new Set([myApplication.id, ...recentLikedIds, ...blockedIds])];
+    // Relaxed: tüm likes + dislikes (24h) + blocked + self (match exclusion düşürülür)
+    const relaxedExcludeIds = [...new Set([myApplication.id, ...allLikedIds, ...dislikedIds, ...blockedIds])];
+    // Minimal: sadece son 30 gün likes + dislikes (24h) + blocked + self (eski tek taraflı beğeniler geri gelir)
+    const minimalExcludeIds = [...new Set([myApplication.id, ...recentLikedIds, ...dislikedIds, ...blockedIds])];
 
     const mergedById = new Map<string, Application>();
     const addBatch = (rows: Application[]) => {
