@@ -133,6 +133,12 @@ export default function ReklamPage() {
           </p>
         </div>
 
+        <div className="mb-8 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4">
+          <p className="text-sm text-amber-100/90">
+            Tum satin alimlar durduruldu. MatchUp servisi yakin zamanda kapatilacagi icin yeni reklam satin alimlari da artik alinmiyor.
+          </p>
+        </div>
+
         {/* Mevcut aktif reklamlar */}
         <div className="grid grid-cols-2 gap-4 mb-8">
           <div className={`p-4 rounded-xl border ${activeAds.left ? 'border-pink-500/30 bg-pink-500/5' : 'border-white/10 bg-white/5'}`}>
@@ -145,7 +151,7 @@ export default function ReklamPage() {
                 <span className="text-pink-400">Dolu</span> &middot; {formatDate(activeAds.left.expires_at)}&apos;e kadar
               </div>
             ) : (
-              <div className="text-xs text-green-400">Boş - Satın alınabilir</div>
+              <div className="text-xs text-gray-500">Bos alan</div>
             )}
           </div>
           <div className={`p-4 rounded-xl border ${activeAds.right ? 'border-pink-500/30 bg-pink-500/5' : 'border-white/10 bg-white/5'}`}>
@@ -158,7 +164,7 @@ export default function ReklamPage() {
                 <span className="text-pink-400">Dolu</span> &middot; {formatDate(activeAds.right.expires_at)}&apos;e kadar
               </div>
             ) : (
-              <div className="text-xs text-green-400">Boş - Satın alınabilir</div>
+              <div className="text-xs text-gray-500">Bos alan</div>
             )}
           </div>
         </div>
@@ -274,21 +280,13 @@ export default function ReklamPage() {
               </div>
             </div>
             <button
-              onClick={handlePurchase}
-              disabled={loading || !imageUrl || !linkUrl}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 text-white font-semibold text-sm hover:from-pink-500 hover:to-purple-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled
+              className="w-full py-3 rounded-xl bg-white/10 text-gray-500 font-semibold text-sm cursor-not-allowed"
             >
-              {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <span className="animate-spin rounded-full h-4 w-4 border-t-2 border-white"></span>
-                  İşleniyor...
-                </span>
-              ) : (
-                <span>
-                  <i className="fa-solid fa-credit-card mr-2"></i>
-                  Satın Al - $25,000
-                </span>
-              )}
+              <span>
+                <i className="fa-solid fa-lock mr-2"></i>
+                Satin Alimlar Kapatildi
+              </span>
             </button>
           </div>
         </div>
