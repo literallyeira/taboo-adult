@@ -135,7 +135,7 @@ export default function ReklamPage() {
 
         <div className="mb-8 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4">
           <p className="text-sm text-amber-100/90">
-            Tum satin alimlar durduruldu. MatchUp servisi yakin zamanda kapatilacagi icin yeni reklam satin alimlari da artik alinmiyor.
+            Tüm satın alımlar durduruldu. MatchUp servisi yakın zamanda kapatılacağı için yeni reklam satın alımları da artık alınmıyor.
           </p>
         </div>
 
@@ -151,7 +151,7 @@ export default function ReklamPage() {
                 <span className="text-pink-400">Dolu</span> &middot; {formatDate(activeAds.left.expires_at)}&apos;e kadar
               </div>
             ) : (
-              <div className="text-xs text-gray-500">Bos alan</div>
+              <div className="text-xs text-gray-500">Boş alan</div>
             )}
           </div>
           <div className={`p-4 rounded-xl border ${activeAds.right ? 'border-pink-500/30 bg-pink-500/5' : 'border-white/10 bg-white/5'}`}>
@@ -164,7 +164,7 @@ export default function ReklamPage() {
                 <span className="text-pink-400">Dolu</span> &middot; {formatDate(activeAds.right.expires_at)}&apos;e kadar
               </div>
             ) : (
-              <div className="text-xs text-gray-500">Bos alan</div>
+              <div className="text-xs text-gray-500">Boş alan</div>
             )}
           </div>
         </div>
@@ -285,7 +285,7 @@ export default function ReklamPage() {
             >
               <span>
                 <i className="fa-solid fa-lock mr-2"></i>
-                Satin Alimlar Kapatildi
+                Satın Alımlar Kapatıldı
               </span>
             </button>
           </div>

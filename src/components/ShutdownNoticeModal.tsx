@@ -15,12 +15,12 @@ export default function ShutdownNoticeModal() {
             <i className="fa-solid fa-triangle-exclamation" />
           </div>
           <div className="flex-1">
-            <h2 className="text-xl font-bold text-white">MatchUp yakinda kapanacak</h2>
+            <h2 className="text-xl font-bold text-white">MatchUp yakında kapanacak</h2>
             <p className="mt-3 text-sm leading-relaxed text-gray-300">
-              MatchUp servisini yakin zamanda kapatmayi planliyoruz. Bize bugune kadar destek olan, kullanan ve burada vakit geciren herkese tesekkur ederiz.
+              MatchUp servisini yakın zamanda kapatmayı planlıyoruz. Bize bugüne kadar destek olan, kullanan ve burada vakit geçiren herkese teşekkür ederiz.
             </p>
             <p className="mt-3 text-sm leading-relaxed text-gray-300">
-              Istek, ihtiyac veya sorularin icin Discord uzerinden <span className="font-semibold text-white">louchesaints</span> kullanici adiyla ulasabilirsin.
+              İstek, ihtiyaç veya soruların için Discord üzerinden <span className="font-semibold text-white">louchesaints</span> kullanıcı adıyla ulaşabilirsin.
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
               <a
@@ -36,7 +36,7 @@ export default function ShutdownNoticeModal() {
                 onClick={() => setVisible(false)}
                 className="btn-secondary text-sm"
               >
-                Anladim
+                Anladım
               </button>
             </div>
           </div>
